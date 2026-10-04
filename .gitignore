@@ -1,0 +1,23 @@
+# ---- Computer junk files ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Editor settings ----
+.vscode/
+.idea/
+*.swp
+
+# ---- Secrets: never upload passwords or keys ----
+.env
+.env.*
+
+# ---- Logs and temporary files ----
+*.log
+*.tmp
+
+# ---- Tools you might add later (not used right now) ----
+node_modules/
+
+# ---- Zip copies of the project ----
+*.zip

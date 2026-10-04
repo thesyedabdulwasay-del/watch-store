@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Cart and Checkout | Your Store Name</title>
+<meta name="description" content="Review your cart and send your order on WhatsApp.">
+<!-- Open Graph tags: used by WhatsApp, Facebook etc. when your link is shared. Add images/og-image.jpg (1200x630) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Your Cart and Checkout | Your Store Name">
+<meta property="og:description" content="Review your cart and send your order on WhatsApp.">
+<meta property="og:image" content="images/og-image.jpg">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="cart">
+<div id="site-header"></div>
+<main>
+<section class="wrap sec"><h1>Your cart</h1><div id="cart-box"></div>
+<form class="form" id="checkout" hidden>
+<h2>Checkout</h2>
+<label>Full name<input name="name" required autocomplete="name"></label>
+<label>Phone number<input name="phone" type="tel" required autocomplete="tel"></label>
+<label>Delivery address<textarea name="address" rows="3" required autocomplete="street-address"></textarea></label>
+<button class="btn" type="submit">Send order on WhatsApp</button>
+<p class="note">Your order opens in WhatsApp. We confirm it there.</p>
+<div class="upi" id="upi"><b>Pay by UPI</b><img src="images/upi-qr.svg" alt="UPI payment QR code placeholder"><p>UPI ID: <b id="upi-id"></b></p><p class="note">Pay after we confirm your order.</p></div>
+</form></section>
+</main>
+<div id="site-footer"></div>
+<script src="js/products.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact Us | Your Store Name</title>
+<meta name="description" content="Message us on WhatsApp or Instagram for orders and questions.">
+<!-- Open Graph tags: used by WhatsApp, Facebook etc. when your link is shared. Add images/og-image.jpg (1200x630) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Contact Us | Your Store Name">
+<meta property="og:description" content="Message us on WhatsApp or Instagram for orders and questions.">
+<meta property="og:image" content="images/og-image.jpg">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="contact">
+<div id="site-header"></div>
+<main>
+<section class="wrap sec"><h1>Contact us</h1>
+<p style="max-width:60ch;margin:1rem 0 1.5rem">Questions about a watch or an order? Message us and we will reply as soon as we can.</p>
+<p><a class="btn" id="wa-btn" href="#">Chat on WhatsApp</a></p>
+<p style="margin-top:.8rem"><a class="btn btn-ghost" id="ig-btn" href="#" rel="noopener">Follow on Instagram</a></p></section>
+<script>document.addEventListener("DOMContentLoaded",function(){document.getElementById("wa-btn").href=waLink("Hi! I have a question.");document.getElementById("ig-btn").href=STORE.instagram;});</script>
+</main>
+<div id="site-footer"></div>
+<script src="js/products.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
