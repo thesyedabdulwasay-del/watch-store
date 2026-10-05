@@ -50,7 +50,13 @@ h1 { font-size: 2.2rem; } h2 { font-size: 1.7rem; margin-bottom: 1.2rem; } h3 { 
 .nav a:hover, .nav a.active { opacity: 1; }
 
 /* 5) HOME HERO */
-   .hero { background: linear-gradient(90deg, rgba(10,10,10,.8), rgba(10,10,10,.2)), url("../images/hero.png") 70% center / cover no-repeat; background-color: var(--black); color: var(--white); padding: 4rem 0 4.5rem; }/* 6) PRODUCT GRID AND CARDS */
+   /* 5) HOME HERO */
+.hero { background: radial-gradient(circle at 80% 20%, #2c2c2c, var(--black) 60%); color: var(--white); padding: 4rem 0 4.5rem; }
+.hero h1 { max-width: 12ch; margin: .6rem 0 1rem; font-size: 2.8rem; }
+.hero p { max-width: 36ch; color: #cfcfcf; margin-bottom: 1.6rem; }
+.hero .eyebrow { color: #aaa; }
+
+/* 6) PRODUCT GRID AND CARDS */
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
 .card { display: block; }
 .imgbox { position: relative; background: var(--grey); border-radius: 16px; overflow: hidden; }
@@ -61,6 +67,7 @@ h1 { font-size: 2.2rem; } h2 { font-size: 1.7rem; margin-bottom: 1.2rem; } h3 { 
 .stars { color: #b8860b; font-size: .85rem; } .stars small { color: var(--muted); }
 .price { font-weight: 600; } .price s { color: var(--muted); font-weight: 400; margin-left: .3rem; }
 .price.lg { font-size: 1.5rem; margin: .4rem 0 .8rem; }
+
 
 /* 7) SHOP FILTERS */
 .filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.2rem; }
