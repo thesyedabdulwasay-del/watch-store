@@ -196,11 +196,24 @@ async function loadProducts() {
   } catch (e) { /* keep products.js list */ }
 }
 
+/* Banner image chosen in the admin panel (home page only). If none is set, the banner from style.css stays. */
+async function loadBanner() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=value&key=eq.hero_image`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+    if (!res.ok) return;
+    const rows = await res.json();
+    const url = rows[0] && rows[0].value;
+    const img = $("#hero-img");
+    if (url && url.startsWith("https://") && img) img.src = url;
+  } catch (e) { /* keep the default banner */ }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   renderChrome();
   await loadProducts();
   const page = document.body.dataset.page;
-  if (page === "home") initHome();
+  if (page === "home") { initHome(); loadBanner(); }
   if (page === "shop") initShop();
   if (page === "product") initProduct();
   if (page === "cart") initCart();
