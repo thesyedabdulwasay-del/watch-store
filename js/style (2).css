@@ -1,0 +1,120 @@
+/* ==========================================================
+   style.css - mobile first. Base styles = phone, @media = bigger screens
+   ========================================================== */
+
+/* 1) COLOURS AND FONTS - change the look here */
+:root {
+  --black: #0a0a0a;
+  --white: #ffffff;
+  --grey: #f3f3f3;       /* product card background */
+  --line: #e2e2e2;
+  --muted: #666666;
+  --wa: #25d366;         /* WhatsApp green */
+  --serif: "Fraunces", Georgia, serif;
+  --sans: "Inter", system-ui, sans-serif;
+}
+
+/* 2) BASE */
+* { box-sizing: border-box; margin: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); color: var(--black); background: var(--white); line-height: 1.6; -webkit-text-size-adjust: 100%; }
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 500; line-height: 1.2; }
+h1 { font-size: 2.2rem; } h2 { font-size: 1.7rem; margin-bottom: 1.2rem; } h3 { font-size: 1.05rem; }
+.wrap { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 1.1rem; }
+.sec { padding: 2.5rem 1.1rem; }
+.center { text-align: center; margin-top: 1.5rem; }
+.eyebrow { color: var(--muted); font-size: .9rem; }
+:focus-visible { outline: 3px solid #7aa7ff; outline-offset: 2px; }
+
+/* 3) BUTTONS - min-height 44px so they are easy to tap on phones */
+.btn, button, select, input, textarea { font: inherit; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 1.6rem; border: 2px solid var(--black); border-radius: 999px; background: var(--black); color: var(--white); font-weight: 600; cursor: pointer; transition: transform .2s, background .2s, color .2s; }
+.btn:hover { transform: translateY(-2px); background: #2a2a2a; }
+.btn-light { background: var(--white); color: var(--black); border-color: var(--white); }
+.btn-light:hover { background: #e9e9e9; }
+.btn-ghost { background: transparent; color: var(--black); }
+.btn-ghost:hover { background: var(--black); color: var(--white); }
+.btn-block { width: 100%; margin-top: .7rem; }
+.link { background: none; border: 0; color: var(--muted); text-decoration: underline; min-height: 44px; cursor: pointer; }
+
+/* 4) HEADER AND MOBILE MENU */
+.header { position: sticky; top: 0; z-index: 20; background: var(--black); color: var(--white); }
+.bar { display: flex; align-items: center; gap: .5rem; min-height: 64px; }
+.logo { font-family: var(--serif); font-size: 1.3rem; margin-right: auto; }
+.cart-link, .burger { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; gap: .3rem; background: none; border: 0; color: inherit; font-size: 1.2rem; cursor: pointer; }
+.nav { display: none; position: absolute; top: 64px; left: 0; right: 0; background: var(--black); border-top: 1px solid #222; padding: .5rem 1.1rem 1rem; }
+.nav.open { display: block; }
+.nav a { display: block; padding: .8rem 0; min-height: 44px; opacity: .8; transition: opacity .2s; }
+.nav a:hover, .nav a.active { opacity: 1; }
+
+/* 5) HOME HERO */
+/* Banner image: change the file name below if your image is named differently.
+   50% = left/right position (0% left, 100% right). The two rgba numbers darken the image so text is readable. */
+.hero { background: linear-gradient(90deg, rgba(10,10,10,.8), rgba(10,10,10,.5)), url("../images/hero-.png.png") 50% center / cover no-repeat; background-color: var(--black); color: var(--white); padding: 4rem 0 4.5rem; }
+.hero h1 { max-width: 12ch; margin: .6rem 0 1rem; font-size: 2.8rem; }
+.hero p { max-width: 36ch; color: #cfcfcf; margin-bottom: 1.6rem; }
+.hero .eyebrow { color: #aaa; }
+
+/* 6) PRODUCT GRID AND CARDS */
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
+.card { display: block; }
+.imgbox { position: relative; background: var(--grey); border-radius: 16px; overflow: hidden; }
+.imgbox img { width: 100%; aspect-ratio: 1; object-fit: cover; transition: transform .4s; }
+.card:hover .imgbox img { transform: scale(1.06); }
+.badge { position: absolute; top: .6rem; left: .6rem; z-index: 1; background: var(--white); border-radius: 999px; padding: .1rem .7rem; font-size: .75rem; font-weight: 600; }
+.card h3 { margin-top: .6rem; }
+.stars { color: #b8860b; font-size: .85rem; } .stars small { color: var(--muted); }
+.price { font-weight: 600; } .price s { color: var(--muted); font-weight: 400; margin-left: .3rem; }
+.price.lg { font-size: 1.5rem; margin: .4rem 0 .8rem; }
+
+/* 7) SHOP FILTERS */
+.filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.2rem; }
+.chip, select { min-height: 44px; padding: 0 1.1rem; border: 1.5px solid var(--black); border-radius: 999px; background: var(--white); cursor: pointer; transition: background .2s, color .2s; }
+.chip.on { background: var(--black); color: var(--white); }
+
+/* 8) WHY CHOOSE US */
+.why { display: grid; gap: 1rem; }
+.why div { background: var(--grey); border-radius: 16px; padding: 1.2rem; }
+.why p { color: var(--muted); font-size: .95rem; }
+
+/* 9) PRODUCT PAGE */
+.pd { display: grid; gap: 1.5rem; }
+.qty { display: inline-flex; align-items: center; gap: .3rem; margin: .5rem 0; }
+.qty button { width: 44px; height: 44px; border: 1.5px solid var(--black); border-radius: 50%; background: var(--white); font-size: 1.2rem; cursor: pointer; }
+.qty span { min-width: 2rem; text-align: center; font-weight: 600; }
+.review { border-top: 1px solid var(--line); padding: .9rem 0; }
+.note { color: var(--muted); font-size: .85rem; }
+
+/* 10) CART AND CHECKOUT */
+.row { display: grid; grid-template-columns: 80px 1fr auto; gap: .9rem; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--line); }
+.row img { border-radius: 12px; background: var(--grey); }
+.row > div:last-child { text-align: right; }
+.total { text-align: right; font-size: 1.3rem; padding: 1rem 0; }
+.form { display: grid; gap: .9rem; margin-top: 1rem; }
+.form label { font-weight: 500; display: grid; gap: .3rem; }
+.form input, .form textarea { min-height: 48px; padding: .7rem 1rem; border: 1.5px solid var(--line); border-radius: 12px; }
+.upi { background: var(--grey); border-radius: 16px; padding: 1.2rem; text-align: center; margin-top: 1.5rem; }
+.upi img { width: 150px; margin: .8rem auto; border-radius: 8px; }
+
+/* 11) FOOTER, WHATSAPP BUTTON, TOAST */
+footer { background: var(--black); color: #bbb; padding: 2rem 1.1rem 5rem; margin-top: 2rem; text-align: center; }
+footer a { display: inline-block; min-height: 44px; padding: .6rem .8rem; color: var(--white); }
+.wa { position: fixed; right: 1rem; bottom: 1rem; z-index: 30; min-height: 52px; padding: 0 1.2rem; display: flex; align-items: center; background: var(--wa); color: #072b14; border-radius: 999px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,.25); transition: transform .2s; }
+.wa:hover { transform: scale(1.05); }
+.toast { position: fixed; left: 50%; bottom: 5.5rem; transform: translateX(-50%); z-index: 40; background: var(--black); color: var(--white); padding: .7rem 1.3rem; border-radius: 999px; }
+
+/* 12) TABLET AND DESKTOP */
+@media (min-width: 760px) {
+  h1 { font-size: 3rem; } .hero h1 { font-size: 4rem; }
+  .grid { grid-template-columns: repeat(4, 1fr); gap: 1.2rem; }
+  .why { grid-template-columns: repeat(4, 1fr); }
+  .pd { grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+  .burger { display: none; }
+  .nav { display: flex; position: static; background: none; border: 0; padding: 0; gap: 1.5rem; order: 2; }
+  .nav a { padding: 0; display: flex; align-items: center; }
+  .cart-link { order: 3; }
+}
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
