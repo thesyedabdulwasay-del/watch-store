@@ -41,6 +41,13 @@
       <button class="btn btn-ghost" type="button" id="cancel">Clear form</button>
     </form>
 
+    <form class="form" id="bform" style="margin-top:2rem">
+      <h2>Home page banner</h2>
+      <label>Upload banner photo (wide photo, JPG or PNG, max 3 MB)<input id="banner" type="file" accept="image/*" required></label>
+      <button class="btn" type="submit">Save banner</button>
+      <button class="btn btn-ghost" type="button" id="bdefault">Use the default banner</button>
+    </form>
+
     <h2 style="margin-top:2rem">Your watches</h2>
     <div id="list"></div>
   </section>
@@ -124,6 +131,26 @@ $("#pform").onsubmit = async e => {
   const { error } = id ? await db.from("products").update(rec).eq("id", id) : await db.from("products").insert(rec);
   say(error ? error.message : "Saved ✓");
   if (!error) { resetForm(); load(); }
+};
+
+/* ===== 6) HOME PAGE BANNER ===== */
+$("#bform").onsubmit = async e => {
+  e.preventDefault();
+  const file = $("#banner").files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { say("Banner is too big. Please use a photo under 3 MB."); return; }
+  say("Uploading banner...");
+  const path = "banner-" + Date.now() + "-" + file.name.replace(/[^a-z0-9.]/gi, "_");
+  const up = await db.storage.from("watch-images").upload(path, file);
+  if (up.error) { say("Banner upload failed: " + up.error.message); return; }
+  const url = db.storage.from("watch-images").getPublicUrl(path).data.publicUrl;
+  const { error } = await db.from("site_settings").upsert({ key: "hero_image", value: url });
+  say(error ? error.message : "Banner saved ✓ (open the home page and press Ctrl + F5)");
+  if (!error) $("#bform").reset();
+};
+$("#bdefault").onclick = async () => {
+  const { error } = await db.from("site_settings").delete().eq("key", "hero_image");
+  say(error ? error.message : "Default banner restored ✓");
 };
 
 show();   // start
