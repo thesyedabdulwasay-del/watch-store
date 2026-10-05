@@ -4,8 +4,8 @@
 
 /* 1) STORE SETTINGS */
 const STORE = {
-  name: "Your Store Name",                 // shown in header, footer, titles
-  whatsapp: "919999999999",                // country code + number, no + or spaces
+  name: "watces",                 // shown in header, footer, titles
+  whatsapp: "92 327 3651015",                // country code + number, no + or spaces
   instagram: "https://instagram.com/yourstore",
   currency: "₹",                           // change to "Rs " if you want Rupees as text
   showUpi: true,                           // set false to hide the UPI box at checkout
