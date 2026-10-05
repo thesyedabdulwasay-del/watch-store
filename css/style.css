@@ -50,8 +50,7 @@ h1 { font-size: 2.2rem; } h2 { font-size: 1.7rem; margin-bottom: 1.2rem; } h3 { 
 .nav a:hover, .nav a.active { opacity: 1; }
 
 /* 5) HOME HERO */
-      .hero { background: linear-gradient(90deg, rgba(10,10,10,.8), rgba(10,10,10,.2)), url("../images/hero.pngj") 70% center / cover no-repeat; background-color: var(--black); color: var(--white); padding: 4rem 0 4.5rem; }
-/* 6) PRODUCT GRID AND CARDS */
+   .hero { background: linear-gradient(90deg, rgba(10,10,10,.8), rgba(10,10,10,.2)), url("../images/hero.png") 70% center / cover no-repeat; background-color: var(--black); color: var(--white); padding: 4rem 0 4.5rem; }/* 6) PRODUCT GRID AND CARDS */
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
 .card { display: block; }
 .imgbox { position: relative; background: var(--grey); border-radius: 16px; overflow: hidden; }
