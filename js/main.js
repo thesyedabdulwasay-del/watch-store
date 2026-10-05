@@ -173,8 +173,32 @@ function initCart() {
 }
 
 /* ---------- 9) START: run the right code for the current page ---------- */
-document.addEventListener("DOMContentLoaded", () => {
+/* Products come from Supabase (set by the admin panel).
+   If Supabase is empty or not reachable, the list in products.js is used instead. */
+const SUPABASE_URL = "https://xwxoeibjefzyxhheabdy.supabase.co";
+const SUPABASE_KEY = "sb_publishable_8yqxSB2Ag5-6YoPV2iEc4g_eAwy8a-M";   // public key, safe here
+
+async function loadProducts() {
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 6000);                               // give up after 6 seconds
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&active=eq.true&order=id`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }, signal: ctrl.signal });
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (!Array.isArray(rows) || !rows.length) return;                   // nothing in Supabase: keep products.js
+    PRODUCTS.length = 0;
+    rows.forEach(r => PRODUCTS.push({
+      id: r.id, name: r.name, price: r.price, oldPrice: r.old_price || 0, category: r.category || "Casual",
+      img: r.img || "images/watch-1.svg", badge: r.badge || "", rating: Number(r.rating) || 4.5,
+      reviews: r.reviews || 0, desc: r.description || ""
+    }));
+  } catch (e) { /* keep products.js list */ }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
   renderChrome();
+  await loadProducts();
   const page = document.body.dataset.page;
   if (page === "home") initHome();
   if (page === "shop") initShop();
