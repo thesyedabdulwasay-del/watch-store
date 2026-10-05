@@ -51,7 +51,7 @@
 const SUPABASE_URL = "https://xwxoeibjefzyxhheabdy.supabase.co/rest/v1/";
 const SUPABASE_KEY = "sb_publishable_8yqxSB2Ag5-6YoPV2iEc4g_eAwy8a-M";   // never paste the service_role key
 
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = supabase.createClient(https://xwxoeibjefzyxhheabdy.supabase.co/rest/v1/, sb_publishable_8yqxSB2Ag5-6YoPV2iEc4g_eAwy8a-M);
 const $ = s => document.querySelector(s);
 const say = t => { $("#msg").textContent = t || ""; };
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
