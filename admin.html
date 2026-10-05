@@ -30,7 +30,8 @@
       <label>Price<input name="price" type="number" min="0" required></label>
       <label>Old price (optional, shows as crossed out)<input name="old_price" type="number" min="0"></label>
       <label>Category<select name="category"><option>Casual</option><option>Formal</option></select></label>
-      <label>Image path (example: images/watch-1.svg)<input name="img"></label>
+      <label>Upload watch photo (JPG or PNG, max 3 MB)<input id="photo" type="file" accept="image/*"></label>
+      <label>Or image path/link (filled automatically after upload)<input name="img"></label>
       <label>Badge<select name="badge"><option value="">None</option><option>New</option><option>Sale</option></select></label>
       <label>Rating (1 to 5)<input name="rating" type="number" step="0.1" min="1" max="5" value="4.5"></label>
       <label>Number of reviews<input name="reviews" type="number" min="0" value="0"></label>
@@ -111,6 +112,15 @@ $("#pform").onsubmit = async e => {
   const rec = { name: f.get("name"), price: +f.get("price"), old_price: +f.get("old_price") || 0, category: f.get("category"),
     img: f.get("img"), badge: f.get("badge"), rating: +f.get("rating") || 4.5, reviews: +f.get("reviews") || 0,
     description: f.get("description"), active: $("#active").checked };
+  const file = $("#photo").files[0];          // photo chosen? upload it to Supabase Storage first
+  if (file) {
+    if (file.size > 3 * 1024 * 1024) { say("Photo is too big. Please use a photo under 3 MB."); return; }
+    say("Uploading photo...");
+    const path = Date.now() + "-" + file.name.replace(/[^a-z0-9.]/gi, "_");
+    const up = await db.storage.from("watch-images").upload(path, file);
+    if (up.error) { say("Photo upload failed: " + up.error.message); return; }
+    rec.img = db.storage.from("watch-images").getPublicUrl(path).data.publicUrl;
+  }
   const { error } = id ? await db.from("products").update(rec).eq("id", id) : await db.from("products").insert(rec);
   say(error ? error.message : "Saved ✓");
   if (!error) { resetForm(); load(); }
