@@ -49,9 +49,10 @@
 <script>
 /* ===== 1) PASTE YOUR TWO SUPABASE VALUES HERE (Project Settings > API) ===== */
 const SUPABASE_URL = "https://xwxoeibjefzyxhheabdy.supabase.co";
-const SUPABASE_KEY = "sb_publishable_8yqxSB2Ag5-6YoPV2iEc4g_eAwy8a-M";   // never paste the service_role key
+const SUPABASE_KEY = "sb_publishable_8yqxSB2Ag5-6YoPV2iEc4g_eAwy8a-M";   // public key; never paste a secret/service_role key
 
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);const $ = s => document.querySelector(s);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = s => document.querySelector(s);
 const say = t => { $("#msg").textContent = t || ""; };
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 let rows = [];
