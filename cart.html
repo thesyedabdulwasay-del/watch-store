@@ -25,9 +25,13 @@
 <label>Full name<input name="name" required autocomplete="name"></label>
 <label>Phone number<input name="phone" type="tel" required autocomplete="tel"></label>
 <label>Delivery address<textarea name="address" rows="3" required autocomplete="street-address"></textarea></label>
+<div><b>Payment method</b><div id="pay-options"></div></div>
+<div class="upi" id="upi" hidden style="margin-top:0"><b>Online payment details</b><p id="online-text" style="white-space:pre-line"></p><p class="note">Pay after we confirm your order on WhatsApp.</p></div>
+<label>Discount code (optional)<span style="display:flex;gap:.5rem"><input id="code" style="flex:1"><button class="btn btn-ghost" type="button" id="apply">Apply</button></span></label>
+<p class="note" id="disc"></p>
 <button class="btn" type="submit">Send order on WhatsApp</button>
 <p class="note">Your order opens in WhatsApp. We confirm it there.</p>
-<div class="upi" id="upi"><b>Pay by UPI</b><img src="images/upi-qr.svg" alt="UPI payment QR code placeholder"><p>UPI ID: <b id="upi-id"></b></p><p class="note">Pay after we confirm your order.</p></div>
+
 </form></section>
 </main>
 <div id="site-footer"></div>
