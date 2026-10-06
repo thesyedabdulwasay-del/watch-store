@@ -5,10 +5,11 @@
    ========================================================== */
 
 /* ---------- 1) SMALL HELPERS ---------- */
+let SETTINGS = {};                                                      // filled from the admin panel (Supabase)
 const $ = (sel, el = document) => el.querySelector(sel);
 const money = n => STORE.currency + n.toLocaleString("en-IN");          // 2999 -> ₹2,999
 const stars = r => "★".repeat(Math.round(r)) + "☆".repeat(5 - Math.round(r));
-const waLink = text => `https://wa.me/${STORE.whatsapp}?text=${encodeURIComponent(text)}`;
+const waLink = text => `https://wa.me/${STORE.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
 
 function toast(msg) {                                                   // small popup message
   const t = document.createElement("div");
@@ -40,7 +41,7 @@ function renderChrome() {
   const links = [["index.html", "Home", "home"], ["shop.html", "Shop", "shop"], ["about.html", "About", "about"], ["contact.html", "Contact", "contact"]];
   $("#site-header").innerHTML = `
     <header class="header"><div class="wrap bar">
-      <a class="logo" href="index.html">${STORE.name}</a>
+      <a class="logo" href="index.html">${SETTINGS.logo_url ? `<img src="${SETTINGS.logo_url}" alt="${STORE.name}" style="height:40px;width:auto">` : STORE.name}</a>
       <nav class="nav" id="nav" aria-label="Main menu">
         ${links.map(l => `<a href="${l[0]}" class="${page === l[2] ? "active" : ""}">${l[1]}</a>`).join("")}
       </nav>
@@ -130,9 +131,20 @@ function initProduct() {
 /* ---------- 8) CART PAGE + WHATSAPP CHECKOUT ---------- */
 function initCart() {
   const box = $("#cart-box"), form = $("#checkout");
+  let disc = 0;                                                         // discount percent currently applied
   const lines = () => Object.entries(getCart())
     .map(([id, q]) => ({ p: PRODUCTS.find(x => x.id === Number(id)), q })).filter(i => i.p);
   const totalOf = items => items.reduce((s, i) => s + i.p.price * i.q, 0);
+  const finalOf = items => Math.round(totalOf(items) * (100 - disc) / 100);
+
+  /* payment choices (set in the admin panel) */
+  const cod = SETTINGS.cod !== "no", online = (SETTINGS.online_info || "").trim();
+  const radio = (v, on) => `<label style="display:flex;gap:.6rem;align-items:center;min-height:44px"><input type="radio" name="pay" value="${v}" ${on ? "checked" : ""} style="width:auto;min-height:0"> ${v}</label>`;
+  $("#pay-options").innerHTML = (cod ? radio("Cash on delivery", true) : "") + (online ? radio("Online payment", !cod) : "") ||
+    "<p class='note'>We will confirm payment with you on WhatsApp.</p>";
+  $("#online-text").textContent = online;
+  const showOnline = () => { const r = form.querySelector("input[name=pay]:checked"); $("#upi").hidden = !(online && r && r.value === "Online payment"); };
+  form.addEventListener("change", showOnline); showOnline();
 
   function draw() {
     const items = lines();
@@ -147,7 +159,8 @@ function initCart() {
         <div><b>${p.name}</b><br>${money(p.price)}
           <div class="qty"><button data-a="dec" data-id="${p.id}" aria-label="Less">−</button><span>${q}</span><button data-a="inc" data-id="${p.id}" aria-label="More">+</button></div></div>
         <div><b>${money(p.price * q)}</b><br><button class="link" data-a="del" data-id="${p.id}">Remove</button></div>
-      </div>`).join("") + `<p class="total">Total: <b>${money(totalOf(items))}</b></p>`;
+      </div>`).join("") +
+      `<p class="total">${disc ? `<small>Discount ${disc}%: −${money(totalOf(items) - finalOf(items))}</small><br>` : ""}Total: <b>${money(finalOf(items))}</b></p>`;
   }
   box.onclick = e => {                                                  // + / − / remove buttons
     const b = e.target.closest("button[data-a]"); if (!b) return;
@@ -158,15 +171,21 @@ function initCart() {
     saveCart(cart); draw();
   };
 
-  $("#upi").hidden = !STORE.showUpi;
-  $("#upi-id").textContent = STORE.upiId;
+  $("#apply").onclick = () => {                                         // discount code
+    const typed = $("#code").value.trim().toLowerCase(), real = (SETTINGS.discount_code || "").trim().toLowerCase();
+    const pct = Number(SETTINGS.discount_percent) || 0;
+    if (real && pct && typed === real) { disc = Math.min(pct, 90); $("#disc").textContent = `Code applied: ${disc}% off ✓`; }
+    else { disc = 0; $("#disc").textContent = "This code is not valid."; }
+    draw();
+  };
 
   form.onsubmit = e => {                                                // build the WhatsApp order message
     e.preventDefault();
     const items = lines(), f = new FormData(form);
-    const msg = `*New order - ${STORE.name}*\n\nName: ${f.get("name")}\nPhone: ${f.get("phone")}\nAddress: ${f.get("address")}\n\n*Items*\n` +
+    const msg = `*New order - ${STORE.name}*\n\nName: ${f.get("name")}\nPhone: ${f.get("phone")}\nAddress: ${f.get("address")}\nPayment: ${f.get("pay") || "to be confirmed"}\n\n*Items*\n` +
       items.map((i, n) => `${n + 1}. ${i.p.name} x ${i.q} = ${money(i.p.price * i.q)}`).join("\n") +
-      `\n\n*Total: ${money(totalOf(items))}*`;
+      (disc ? `\nDiscount code: ${$("#code").value.trim()} (${disc}% off)` : "") +
+      `\n\n*Total: ${money(finalOf(items))}*`;
     window.open(waLink(msg), "_blank");
   };
   draw();
@@ -197,21 +216,26 @@ async function loadProducts() {
 }
 
 /* Banner image chosen in the admin panel (home page only). If none is set, the banner from style.css stays. */
-async function loadBanner() {
+/* Store settings from the admin panel: name, WhatsApp, logo, payment, discount, banner */
+async function loadSettings() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=value&key=eq.hero_image`,
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=key,value`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
     if (!res.ok) return;
-    const rows = await res.json();
-    const url = rows[0] && rows[0].value;
-    const img = $("#hero-img");
-    if (url && url.startsWith("https://") && img) img.src = url;
-  } catch (e) { /* keep the default banner */ }
+    (await res.json()).forEach(r => { SETTINGS[r.key] = r.value; });
+    if (SETTINGS.store_name) STORE.name = SETTINGS.store_name;
+    const num = (SETTINGS.whatsapp || "").replace(/\D/g, "");
+    if (num) STORE.whatsapp = num;
+  } catch (e) { /* keep the values from products.js */ }
+}
+function loadBanner() {                                                 // banner picture (home page only)
+  const img = $("#hero-img"), url = SETTINGS.hero_image;
+  if (img && url && url.startsWith("https://")) img.src = url;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  await Promise.all([loadProducts(), loadSettings()]);
   renderChrome();
-  await loadProducts();
   const page = document.body.dataset.page;
   if (page === "home") { initHome(); loadBanner(); }
   if (page === "shop") initShop();
