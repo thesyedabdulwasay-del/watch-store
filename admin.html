@@ -41,6 +41,19 @@
       <button class="btn btn-ghost" type="button" id="cancel">Clear form</button>
     </form>
 
+    <form class="form" id="sform" style="margin-top:2rem">
+      <h2>Store settings</h2>
+      <label>Store name<input name="store_name"></label>
+      <label>WhatsApp number (country code first, example 923001234567)<input name="whatsapp" inputmode="numeric"></label>
+      <label>Logo (PNG with transparent background, light colours work best, max 3 MB)<input id="logo" type="file" accept="image/*"></label>
+      <label style="display:flex;gap:.6rem;align-items:center"><input id="cod" type="checkbox" checked style="width:auto;min-height:0"> Cash on delivery</label>
+      <label>Online payment details (JazzCash, Easypaisa or bank account). Leave empty to hide online payment.<textarea name="online_info" rows="3"></textarea></label>
+      <label>Discount code (example SAVE10). Leave empty for no discount.<input name="discount_code"></label>
+      <label>Discount percent<input name="discount_percent" type="number" min="0" max="90"></label>
+      <button class="btn" type="submit">Save settings</button>
+      <button class="btn btn-ghost" type="button" id="rlogo">Remove logo</button>
+    </form>
+
     <form class="form" id="bform" style="margin-top:2rem">
       <h2>Home page banner</h2>
       <label>Upload banner photo (wide photo, JPG or PNG, max 3 MB)<input id="banner" type="file" accept="image/*" required></label>
@@ -70,7 +83,7 @@ async function show() {                       // show login box or panel
   const { data: { session } } = await db.auth.getSession();
   $("#login").hidden = !!session;
   $("#panel").hidden = !session;
-  if (session) load();
+  if (session) { load(); loadSettingsForm(); }
 }
 $("#login").onsubmit = async e => {
   e.preventDefault(); say("Logging in...");
@@ -133,7 +146,39 @@ $("#pform").onsubmit = async e => {
   if (!error) { resetForm(); load(); }
 };
 
-/* ===== 6) HOME PAGE BANNER ===== */
+/* ===== 6) STORE SETTINGS (name, WhatsApp, logo, payment, discount) ===== */
+async function loadSettingsForm() {
+  const { data } = await db.from("site_settings").select("key,value");
+  const s = {}; (data || []).forEach(r => { s[r.key] = r.value; });
+  const f = $("#sform");
+  ["store_name", "whatsapp", "online_info", "discount_code", "discount_percent"].forEach(k => { f[k].value = s[k] || ""; });
+  $("#cod").checked = s.cod !== "no";
+}
+$("#sform").onsubmit = async e => {
+  e.preventDefault(); const f = e.target;
+  const rows = [
+    { key: "store_name", value: f.store_name.value.trim() }, { key: "whatsapp", value: f.whatsapp.value.replace(/\D/g, "") },
+    { key: "cod", value: $("#cod").checked ? "yes" : "no" }, { key: "online_info", value: f.online_info.value.trim() },
+    { key: "discount_code", value: f.discount_code.value.trim() }, { key: "discount_percent", value: String(+f.discount_percent.value || 0) }];
+  const file = $("#logo").files[0];
+  if (file) {
+    if (file.size > 3 * 1024 * 1024) { say("Logo is too big. Please use a file under 3 MB."); return; }
+    say("Uploading logo...");
+    const path = "logo-" + Date.now() + "-" + file.name.replace(/[^a-z0-9.]/gi, "_");
+    const up = await db.storage.from("watch-images").upload(path, file);
+    if (up.error) { say("Logo upload failed: " + up.error.message); return; }
+    rows.push({ key: "logo_url", value: db.storage.from("watch-images").getPublicUrl(path).data.publicUrl });
+  }
+  const { error } = await db.from("site_settings").upsert(rows);
+  say(error ? error.message : "Settings saved ✓ (open the website and press Ctrl + F5)");
+  if (!error) $("#logo").value = "";
+};
+$("#rlogo").onclick = async () => {
+  const { error } = await db.from("site_settings").delete().eq("key", "logo_url");
+  say(error ? error.message : "Logo removed ✓");
+};
+
+/* ===== 7) HOME PAGE BANNER ===== */
 $("#bform").onsubmit = async e => {
   e.preventDefault();
   const file = $("#banner").files[0];
