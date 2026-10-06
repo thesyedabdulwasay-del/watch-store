@@ -7,7 +7,7 @@
 /* ---------- 1) SMALL HELPERS ---------- */
 let SETTINGS = {};                                                      // filled from the admin panel (Supabase)
 const $ = (sel, el = document) => el.querySelector(sel);
-const money = n => STORE.currency + n.toLocaleString("en-IN");          // 2999 -> ₹2,999
+const money = n => "Rs " + n.toLocaleString("en-IN");                  // 2999 -> Rs 2,999
 const stars = r => "★".repeat(Math.round(r)) + "☆".repeat(5 - Math.round(r));
 const waLink = text => `https://wa.me/${STORE.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
 
@@ -32,7 +32,7 @@ function addToCart(id, qty = 1) {
   const cart = getCart();
   cart[id] = (cart[id] || 0) + qty;
   saveCart(cart);
-  toast("Added to cart ✓");
+  openDrawer();
 }
 
 /* ---------- 3) HEADER, FOOTER AND WHATSAPP BUTTON (same on every page) ---------- */
@@ -115,12 +115,14 @@ function initProduct() {
         <p>${p.desc}</p>
         <div class="qty"><button id="minus" aria-label="Less">−</button><span id="q">1</span><button id="plus" aria-label="More">+</button></div>
         <button class="btn btn-block" id="add">Add to cart</button>
+        <button class="btn btn-block" id="buy" style="background:#d94b3d;border-color:#d94b3d">Buy it now</button>
         <a class="btn btn-ghost btn-block" href="${waLink(`Hi! I am interested in the ${p.name}.`)}">Ask on WhatsApp</a>
       </div>
     </div>`;
   $("#minus").onclick = () => { qty = Math.max(1, qty - 1); $("#q").textContent = qty; };
   $("#plus").onclick = () => { qty++; $("#q").textContent = qty; };
   $("#add").onclick = () => addToCart(p.id, qty);
+  $("#buy").onclick = () => { const c = getCart(); c[p.id] = (c[p.id] || 0) + qty; saveCart(c); location.href = "cart.html"; };   // straight to checkout
 
   $("#reviews").innerHTML = `<h2>Customer reviews</h2>` + REVIEWS.map(r =>
     `<div class="review"><b>${r.name}</b> <span class="stars">${stars(r.stars)}</span><p>${r.text}</p></div>`).join("") +
@@ -135,7 +137,10 @@ function initCart() {
   const lines = () => Object.entries(getCart())
     .map(([id, q]) => ({ p: PRODUCTS.find(x => x.id === Number(id)), q })).filter(i => i.p);
   const totalOf = items => items.reduce((s, i) => s + i.p.price * i.q, 0);
-  const finalOf = items => Math.round(totalOf(items) * (100 - disc) / 100);
+  const fee = Number(SETTINGS.shipping_fee) || 0, freeMin = Number(SETTINGS.free_shipping_min) || 0;
+  const goods = items => Math.round(totalOf(items) * (100 - disc) / 100);
+  const shipOf = items => (fee > 0 && !(freeMin > 0 && goods(items) >= freeMin)) ? fee : 0;   // delivery charge
+  const finalOf = items => goods(items) + shipOf(items);
 
   /* payment choices (set in the admin panel) */
   const cod = SETTINGS.cod !== "no";
@@ -163,7 +168,7 @@ function initCart() {
           <div class="qty"><button data-a="dec" data-id="${p.id}" aria-label="Less">−</button><span>${q}</span><button data-a="inc" data-id="${p.id}" aria-label="More">+</button></div></div>
         <div><b>${money(p.price * q)}</b><br><button class="link" data-a="del" data-id="${p.id}">Remove</button></div>
       </div>`).join("") +
-      `<p class="total">${disc ? `<small>Discount ${disc}%: −${money(totalOf(items) - finalOf(items))}</small><br>` : ""}Total: <b>${money(finalOf(items))}</b></p>`;
+      `<p class="total">${disc ? `<small>Discount ${disc}%: −${money(totalOf(items) - goods(items))}</small><br>` : ""}${fee ? `<small>Delivery: ${shipOf(items) ? money(shipOf(items)) : "Free"}</small><br>` : ""}Total: <b>${money(finalOf(items))}</b></p>`;
   }
   box.onclick = e => {                                                  // + / − / remove buttons
     const b = e.target.closest("button[data-a]"); if (!b) return;
@@ -188,10 +193,54 @@ function initCart() {
     const msg = `*New order - ${STORE.name}*\n\nName: ${f.get("name")}\nPhone: ${f.get("phone")}\nAddress: ${f.get("address")}\nPayment: ${f.get("pay") || "to be confirmed"}\n\n*Items*\n` +
       items.map((i, n) => `${n + 1}. ${i.p.name} x ${i.q} = ${money(i.p.price * i.q)}`).join("\n") +
       (disc ? `\nDiscount code: ${$("#code").value.trim()} (${disc}% off)` : "") +
+      (fee ? `\nDelivery: ${shipOf(items) ? money(shipOf(items)) : "Free"}` : "") +
       `\n\n*Total: ${money(finalOf(items))}*`;
     window.open(waLink(msg), "_blank");
   };
   draw();
+}
+
+/* ---------- SIDE CART (slides in from the right, like big online stores) ---------- */
+function openDrawer() { drawDrawer(); document.body.classList.add("dr-open"); }
+function closeDrawer() { document.body.classList.remove("dr-open"); }
+function drawDrawer() {
+  const items = Object.entries(getCart()).map(([id, q]) => ({ p: PRODUCTS.find(x => x.id === Number(id)), q })).filter(i => i.p);
+  const sub = items.reduce((s, i) => s + i.p.price * i.q, 0);
+  const fee = Number(SETTINGS.shipping_fee) || 0, min = Number(SETTINGS.free_shipping_min) || 0;
+  const bar = (fee > 0 && min > 0 && items.length) ? `<div style="padding:1rem 0 .3rem"><div class="dr-bar"><i style="width:${Math.min(100, sub / min * 100)}%"></i></div>
+    <p class="note">${sub < min ? `Spend <b>${money(min - sub)}</b> more to enjoy <b style="color:#d94b3d">free delivery!</b>` : "You get <b style='color:#d94b3d'>free delivery!</b>"}</p></div>` : "";
+  $("#dr").innerHTML = `
+    <div class="dr-head"><h3>Shopping cart (${cartCount()})</h3><button class="link" data-a="close" aria-label="Close cart">✕</button></div>
+    <div class="dr-body">${bar}${items.length ? items.map(({ p, q }) => `
+      <div class="row"><img src="${p.img}" alt="${p.name} watch">
+        <div><b>${p.name}</b><br>${money(p.price)}
+          <div class="qty"><button data-a="dec" data-id="${p.id}" aria-label="Less">−</button><span>${q}</span><button data-a="inc" data-id="${p.id}" aria-label="More">+</button></div></div>
+        <div><button class="link" data-a="del" data-id="${p.id}">Remove</button></div></div>`).join("") : "<p class='center'>Your cart is empty.</p>"}</div>
+    <div class="dr-foot"><p style="display:flex;justify-content:space-between"><b>Subtotal</b><b>${money(sub)}</b></p>
+      <p class="note">Delivery and discount are shown at checkout.</p><a class="btn btn-block" href="cart.html">Checkout</a></div>`;
+}
+function initDrawer() {
+  const st = document.createElement("style");                           // styles for the side cart
+  st.textContent = `.dr-back{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .3s;z-index:50}
+    .dr{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:#fff;z-index:60;transform:translateX(100%);transition:transform .3s;display:flex;flex-direction:column}
+    body.dr-open .dr-back{opacity:1;pointer-events:auto}body.dr-open .dr{transform:none}
+    .dr-head{display:flex;justify-content:space-between;align-items:center;padding:.6rem 1.1rem;border-bottom:1px solid var(--line)}
+    .dr-body{flex:1;overflow:auto;padding:0 1.1rem}.dr-foot{padding:1rem 1.1rem;border-top:1px solid var(--line)}
+    .dr-bar{height:6px;background:#e5e5e5;border-radius:9px}.dr-bar i{display:block;height:100%;background:#d94b3d;border-radius:9px;transition:width .3s}
+    .dr .row{grid-template-columns:70px 1fr auto}`;
+  document.head.appendChild(st);
+  document.body.insertAdjacentHTML("beforeend", `<div class="dr-back" id="dr-back"></div><aside class="dr" id="dr" aria-label="Shopping cart"></aside>`);
+  $("#dr-back").onclick = closeDrawer;
+  $("#dr").onclick = e => {
+    const b = e.target.closest("[data-a]"); if (!b) return;
+    const cart = getCart(), id = b.dataset.id;
+    if (b.dataset.a === "close") return closeDrawer();
+    if (b.dataset.a === "inc") cart[id]++;
+    if (b.dataset.a === "dec") cart[id] = Math.max(1, cart[id] - 1);
+    if (b.dataset.a === "del") delete cart[id];
+    saveCart(cart); drawDrawer();
+  };
+  if (document.body.dataset.page !== "cart") $(".cart-link").onclick = e => { e.preventDefault(); openDrawer(); };
 }
 
 /* ---------- 9) START: run the right code for the current page ---------- */
@@ -244,6 +293,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await Promise.all([loadProducts(), loadSettings()]);
   STORE.currency = "Rs ";                                                // prices show as Rs 2,999
   renderChrome();
+  initDrawer();
   const page = document.body.dataset.page;
   if (page === "home") { initHome(); loadBanner(); }
   if (page === "shop") initShop();
