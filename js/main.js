@@ -138,7 +138,10 @@ function initCart() {
   const finalOf = items => Math.round(totalOf(items) * (100 - disc) / 100);
 
   /* payment choices (set in the admin panel) */
-  const cod = SETTINGS.cod !== "no", online = (SETTINGS.online_info || "").trim();
+  const cod = SETTINGS.cod !== "no";
+  const local = "0" + STORE.whatsapp.replace(/\D/g, "").replace(/^92/, "");   // 923273651015 -> 03273651015
+  const online = SETTINGS.online === "no" ? "" : ((SETTINGS.online_info || "").trim() ||
+    `JazzCash number: ${local}\nSend the total amount to this number, then send us the screenshot on WhatsApp.`);
   const radio = (v, on) => `<label style="display:flex;gap:.6rem;align-items:center;min-height:44px"><input type="radio" name="pay" value="${v}" ${on ? "checked" : ""} style="width:auto;min-height:0"> ${v}</label>`;
   $("#pay-options").innerHTML = (cod ? radio("Cash on delivery", true) : "") + (online ? radio("Online payment", !cod) : "") ||
     "<p class='note'>We will confirm payment with you on WhatsApp.</p>";
@@ -212,6 +215,10 @@ async function loadProducts() {
       img: r.img || "images/watch-1.svg", badge: r.badge || "", rating: Number(r.rating) || 4.5,
       reviews: r.reviews || 0, desc: r.description || ""
     }));
+    PRODUCTS.forEach((p, i) => {                                        // discount % set for one watch in the admin panel
+      const pct = Number(rows[i].discount_percent) || 0;
+      if (pct > 0) { p.oldPrice = p.price; p.price = Math.round(p.price * (100 - pct) / 100); p.badge = p.badge || pct + "% OFF"; }
+    });
   } catch (e) { /* keep products.js list */ }
 }
 
@@ -235,6 +242,7 @@ function loadBanner() {                                                 // banne
 
 document.addEventListener("DOMContentLoaded", async () => {
   await Promise.all([loadProducts(), loadSettings()]);
+  STORE.currency = "Rs ";                                                // prices show as Rs 2,999
   renderChrome();
   const page = document.body.dataset.page;
   if (page === "home") { initHome(); loadBanner(); }
