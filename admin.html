@@ -32,6 +32,7 @@
       <label>Category<select name="category"><option>Casual</option><option>Formal</option></select></label>
       <label>Upload watch photo (JPG or PNG, max 3 MB)<input id="photo" type="file" accept="image/*"></label>
       <label>Or image path/link (filled automatically after upload)<input name="img"></label>
+      <label>Discount on this watch, in percent (0 for none)<input name="item_discount" type="number" min="0" max="90" value="0"></label>
       <label>Badge<select name="badge"><option value="">None</option><option>New</option><option>Sale</option></select></label>
       <label>Rating (1 to 5)<input name="rating" type="number" step="0.1" min="1" max="5" value="4.5"></label>
       <label>Number of reviews<input name="reviews" type="number" min="0" value="0"></label>
@@ -40,6 +41,39 @@
       <button class="btn" type="submit">Save watch</button>
       <button class="btn btn-ghost" type="button" id="cancel">Clear form</button>
     </form>
+
+    <form class="form" id="sform" style="margin-top:2rem">
+      <h2>Store settings</h2>
+      <label>Store name<input name="store_name"></label>
+      <label>WhatsApp number (country code first, example 923001234567)<input name="whatsapp" inputmode="numeric"></label>
+      <label>Logo (PNG with transparent background, light colours work best, max 3 MB)<input id="logo" type="file" accept="image/*"></label>
+      <label style="display:flex;gap:.6rem;align-items:center"><input id="cod" type="checkbox" checked style="width:auto;min-height:0"> Cash on delivery</label>
+      <label style="display:flex;gap:.6rem;align-items:center"><input id="online" type="checkbox" checked style="width:auto;min-height:0"> Online payment (JazzCash on your WhatsApp number)</label>
+      <label>Payment details shown to customers (optional). Leave empty to use JazzCash on your WhatsApp number. You can add your account name here.<textarea name="online_info" rows="3"></textarea></label>
+      <label>Delivery charge in Rs (0 for free delivery on everything)<input name="shipping_fee" type="number" min="0"></label>
+      <label>Free delivery on orders above Rs (0 for no free-delivery limit)<input name="free_shipping_min" type="number" min="0"></label>
+      <label>Discount code (example SAVE10). Leave empty for no discount.<input name="discount_code"></label>
+      <label>Discount percent<input name="discount_percent" type="number" min="0" max="90"></label>
+      <button class="btn" type="submit">Save settings</button>
+      <button class="btn btn-ghost" type="button" id="rlogo">Remove logo</button>
+    </form>
+
+    <form class="form" id="bform" style="margin-top:2rem">
+      <h2>Home page banner</h2>
+      <label>Upload banner photo (wide photo, JPG or PNG, max 3 MB)<input id="banner" type="file" accept="image/*" required></label>
+      <button class="btn" type="submit">Save banner</button>
+      <button class="btn btn-ghost" type="button" id="bdefault">Use the default banner</button>
+    </form>
+
+
+    <section class="form" id="orders-section" style="margin-top:2rem">
+      <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap">
+        <h2 style="margin:0">Orders</h2>
+        <button class="btn btn-ghost" type="button" id="refresh-orders">Refresh orders</button>
+      </div>
+      <p class="note" id="orders-msg"></p>
+      <div id="orders-list"></div>
+    </section>
 
     <h2 style="margin-top:2rem">Your watches</h2>
     <div id="list"></div>
@@ -63,7 +97,7 @@ async function show() {                       // show login box or panel
   const { data: { session } } = await db.auth.getSession();
   $("#login").hidden = !!session;
   $("#panel").hidden = !session;
-  if (session) load();
+  if (session) { load(); loadSettingsForm(); loadOrders(); }
 }
 $("#login").onsubmit = async e => {
   e.preventDefault(); say("Logging in...");
@@ -71,6 +105,44 @@ $("#login").onsubmit = async e => {
   say(error ? error.message : ""); show();
 };
 $("#logout").onclick = async () => { await db.auth.signOut(); show(); };
+
+/* ===== 3) ORDERS ===== */
+function orderItemsHtml(items) {
+  let arr = Array.isArray(items) ? items : [];
+  return arr.length ? arr.map(i => `<div>${esc(i.name || "Item")} × ${esc(i.qty || i.quantity || 1)} — Rs ${Number(i.price || 0).toLocaleString("en-PK")}</div>`).join("") : "<div>No item details</div>";
+}
+
+async function loadOrders() {
+  const msg = $("#orders-msg"), list = $("#orders-list");
+  msg.textContent = "Loading orders...";
+  const { data, error } = await db.from("orders").select("*").order("created_at", { ascending: false });
+  if (error) { msg.textContent = "Could not load orders: " + error.message; list.innerHTML = ""; return; }
+  msg.textContent = data.length ? `${data.length} order(s)` : "No orders yet.";
+  list.innerHTML = data.length ? data.map(o => `
+    <article class="row" style="display:block;margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div><b>Order #${esc(o.id)}</b><br>${esc(o.customer_name)} · ${esc(o.customer_phone)}${o.city ? " · " + esc(o.city) : ""}</div>
+        <div><b>Rs ${Number(o.total || 0).toLocaleString("en-PK")}</b><br>${new Date(o.created_at).toLocaleString()}</div>
+      </div>
+      <p><b>Address:</b> ${esc(o.customer_address)}</p>
+      <p><b>Payment:</b> ${esc(o.payment_method || "COD")}</p>
+      <p><b>Items:</b><br>${orderItemsHtml(o.items)}</p>
+      <label>Status
+        <select class="order-status" data-id="${esc(o.id)}">
+          ${["pending","confirmed","shipped","delivered","cancelled"].map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st[0].toUpperCase()+st.slice(1)}</option>`).join("")}
+        </select>
+      </label>
+      ${o.notes ? `<p><b>Notes:</b> ${esc(o.notes)}</p>` : ""}
+    </article>`).join("") : "<p>No orders yet.</p>";
+}
+
+$("#refresh-orders").onclick = loadOrders;
+$("#orders-list").onchange = async e => {
+  const select = e.target.closest(".order-status");
+  if (!select) return;
+  const { error } = await db.from("orders").update({ status: select.value }).eq("id", select.dataset.id);
+  $("#orders-msg").textContent = error ? "Status update failed: " + error.message : "Order status updated ✓";
+};
 
 /* ===== 3) SHOW ALL PRODUCTS ===== */
 async function load() {
@@ -80,7 +152,7 @@ async function load() {
   $("#list").innerHTML = rows.length ? rows.map(p => `
     <div class="row">
       <img src="${esc(p.img)}" alt="${esc(p.name)}">
-      <div><b>${esc(p.name)}</b><br>${esc(p.category)} - ${esc(p.price)}${p.active ? "" : " (hidden)"}</div>
+      <div><b>${esc(p.name)}</b><br>${esc(p.category)} - ${esc(p.price)}${p.discount_percent ? " (" + p.discount_percent + "% off)" : ""}${p.active ? "" : " (hidden)"}</div>
       <div><button class="link" data-a="edit" data-id="${p.id}">Edit</button><br><button class="link" data-a="del" data-id="${p.id}">Delete</button></div>
     </div>`).join("") : "<p>No watches yet. Add your first one above.</p>";
 }
@@ -93,7 +165,7 @@ $("#list").onclick = async e => {
     const f = $("#pform");
     f.id.value = p.id; f.name.value = p.name; f.price.value = p.price; f.old_price.value = p.old_price || "";
     f.category.value = p.category; f.img.value = p.img || ""; f.badge.value = p.badge || "";
-    f.rating.value = p.rating; f.reviews.value = p.reviews; f.description.value = p.description || "";
+    f.item_discount.value = p.discount_percent || 0; f.rating.value = p.rating; f.reviews.value = p.reviews; f.description.value = p.description || "";
     $("#active").checked = p.active; $("#ftitle").textContent = "Edit: " + p.name;
     f.scrollIntoView({ behavior: "smooth" });
   }
@@ -111,7 +183,7 @@ $("#pform").onsubmit = async e => {
   const f = new FormData(e.target), id = f.get("id");
   const rec = { name: f.get("name"), price: +f.get("price"), old_price: +f.get("old_price") || 0, category: f.get("category"),
     img: f.get("img"), badge: f.get("badge"), rating: +f.get("rating") || 4.5, reviews: +f.get("reviews") || 0,
-    description: f.get("description"), active: $("#active").checked };
+    description: f.get("description"), discount_percent: +f.get("item_discount") || 0, active: $("#active").checked };
   const file = $("#photo").files[0];          // photo chosen? upload it to Supabase Storage first
   if (file) {
     if (file.size > 3 * 1024 * 1024) { say("Photo is too big. Please use a photo under 3 MB."); return; }
@@ -124,6 +196,60 @@ $("#pform").onsubmit = async e => {
   const { error } = id ? await db.from("products").update(rec).eq("id", id) : await db.from("products").insert(rec);
   say(error ? error.message : "Saved ✓");
   if (!error) { resetForm(); load(); }
+};
+
+/* ===== 6) STORE SETTINGS (name, WhatsApp, logo, payment, discount) ===== */
+async function loadSettingsForm() {
+  const { data } = await db.from("site_settings").select("key,value");
+  const s = {}; (data || []).forEach(r => { s[r.key] = r.value; });
+  const f = $("#sform");
+  ["store_name", "whatsapp", "online_info", "discount_code", "discount_percent", "shipping_fee", "free_shipping_min"].forEach(k => { f[k].value = s[k] || ""; });
+  $("#cod").checked = s.cod !== "no";
+  $("#online").checked = s.online !== "no";
+}
+$("#sform").onsubmit = async e => {
+  e.preventDefault(); const f = e.target;
+  const rows = [
+    { key: "store_name", value: f.store_name.value.trim() }, { key: "whatsapp", value: f.whatsapp.value.replace(/\D/g, "") },
+    { key: "cod", value: $("#cod").checked ? "yes" : "no" }, { key: "online", value: $("#online").checked ? "yes" : "no" }, { key: "online_info", value: f.online_info.value.trim() },
+    { key: "shipping_fee", value: String(+f.shipping_fee.value || 0) }, { key: "free_shipping_min", value: String(+f.free_shipping_min.value || 0) },
+    { key: "discount_code", value: f.discount_code.value.trim() }, { key: "discount_percent", value: String(+f.discount_percent.value || 0) }];
+  const file = $("#logo").files[0];
+  if (file) {
+    if (file.size > 3 * 1024 * 1024) { say("Logo is too big. Please use a file under 3 MB."); return; }
+    say("Uploading logo...");
+    const path = "logo-" + Date.now() + "-" + file.name.replace(/[^a-z0-9.]/gi, "_");
+    const up = await db.storage.from("watch-images").upload(path, file);
+    if (up.error) { say("Logo upload failed: " + up.error.message); return; }
+    rows.push({ key: "logo_url", value: db.storage.from("watch-images").getPublicUrl(path).data.publicUrl });
+  }
+  const { error } = await db.from("site_settings").upsert(rows);
+  say(error ? error.message : "Settings saved ✓ (open the website and press Ctrl + F5)");
+  if (!error) $("#logo").value = "";
+};
+$("#rlogo").onclick = async () => {
+  const { error } = await db.from("site_settings").delete().eq("key", "logo_url");
+  say(error ? error.message : "Logo removed ✓");
+};
+
+/* ===== 7) HOME PAGE BANNER ===== */
+$("#bform").onsubmit = async e => {
+  e.preventDefault();
+  const file = $("#banner").files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { say("Banner is too big. Please use a photo under 3 MB."); return; }
+  say("Uploading banner...");
+  const path = "banner-" + Date.now() + "-" + file.name.replace(/[^a-z0-9.]/gi, "_");
+  const up = await db.storage.from("watch-images").upload(path, file);
+  if (up.error) { say("Banner upload failed: " + up.error.message); return; }
+  const url = db.storage.from("watch-images").getPublicUrl(path).data.publicUrl;
+  const { error } = await db.from("site_settings").upsert({ key: "hero_image", value: url });
+  say(error ? error.message : "Banner saved ✓ (open the home page and press Ctrl + F5)");
+  if (!error) $("#bform").reset();
+};
+$("#bdefault").onclick = async () => {
+  const { error } = await db.from("site_settings").delete().eq("key", "hero_image");
+  say(error ? error.message : "Default banner restored ✓");
 };
 
 show();   // start
