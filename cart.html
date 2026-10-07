@@ -3,13 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Your Cart and Checkout | Your Store Name</title>
-<meta name="description" content="Review your cart and send your order on WhatsApp.">
-<!-- Open Graph tags: used by WhatsApp, Facebook etc. when your link is shared. Add images/og-image.jpg (1200x630) -->
+<title>Your Cart & Checkout | LuxeCraft Watches Pakistan</title>
+<meta name="description" content="Review your watch cart and place your order with Cash on Delivery anywhere in Pakistan. Fast delivery and verified quality.">
+<link rel="canonical" href="https://thesyedabdulwasay-del.github.io/watch-store/cart.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Your Cart and Checkout | Your Store Name">
-<meta property="og:description" content="Review your cart and send your order on WhatsApp.">
-<meta property="og:image" content="images/og-image.jpg">
+<meta property="og:title" content="Your Cart & Checkout | LuxeCraft Watches Pakistan">
+<meta property="og:description" content="Review your watch cart and place your order with Cash on Delivery anywhere in Pakistan.">
+<meta property="og:image" content="images/hero-.png.png">
+<meta property="og:url" content="https://thesyedabdulwasay-del.github.io/watch-store/cart.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Your Cart & Checkout | LuxeCraft Watches Pakistan">
+<meta name="twitter:description" content="Order luxury & casual men's watches with Cash on Delivery across Pakistan.">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,20 +23,138 @@
 <body data-page="cart">
 <div id="site-header"></div>
 <main>
-<section class="wrap sec"><h1>Your cart</h1><div id="cart-box"></div>
-<form class="form" id="checkout" hidden>
-<h2>Checkout</h2>
-<label>Full name<input name="name" required autocomplete="name"></label>
-<label>Phone number<input name="phone" type="tel" required autocomplete="tel"></label>
-<label>Delivery address<textarea name="address" rows="3" required autocomplete="street-address"></textarea></label>
-<div><b>Payment method</b><div id="pay-options"></div></div>
-<div class="upi" id="upi" hidden style="margin-top:0"><b>Online payment details</b><p id="online-text" style="white-space:pre-line"></p><p class="note">Pay after we confirm your order on WhatsApp.</p></div>
-<label>Discount code (optional)<span style="display:flex;gap:.5rem"><input id="code" style="flex:1"><button class="btn btn-ghost" type="button" id="apply">Apply</button></span></label>
-<p class="note" id="disc"></p>
-<button class="btn" type="submit">Send order on WhatsApp</button>
-<p class="note">Your order opens in WhatsApp. We confirm it there.</p>
+<section class="wrap sec" id="cart-section">
+  <h1>Your Cart</h1>
+  <div id="cart-box"></div>
 
-</form></section>
+  <!-- CHECKOUT FORM -->
+  <form class="form" id="checkout" hidden novalidate>
+    <h2>Delivery & Checkout</h2>
+    <p class="note">Cash on Delivery available nationwide across Pakistan. Standard delivery in 2-4 working days.</p>
+
+    <div class="field-group">
+      <label for="c-name">Full Name <span class="req">*</span></label>
+      <input id="c-name" name="name" required autocomplete="name" placeholder="e.g. Hamza Tariq" minlength="3">
+      <span class="field-error" id="err-name"></span>
+    </div>
+
+    <div class="field-grid">
+      <div class="field-group">
+        <label for="c-phone">WhatsApp / Mobile Number <span class="req">*</span></label>
+        <input id="c-phone" name="phone" type="tel" required autocomplete="tel" placeholder="e.g. 0300-1234567 or 03273651015">
+        <span class="field-error" id="err-phone"></span>
+      </div>
+      <div class="field-group">
+        <label for="c-email">Email Address <span class="opt">(Optional for order tracking)</span></label>
+        <input id="c-email" name="email" type="email" autocomplete="email" placeholder="e.g. name@example.com">
+        <span class="field-error" id="err-email"></span>
+      </div>
+    </div>
+
+    <div class="field-grid">
+      <div class="field-group">
+        <label for="c-city">City <span class="req">*</span></label>
+        <input id="c-city" name="city" list="pakistan-cities" required placeholder="e.g. Karachi, Lahore, Islamabad">
+        <datalist id="pakistan-cities">
+          <option value="Karachi">
+          <option value="Lahore">
+          <option value="Islamabad">
+          <option value="Rawalpindi">
+          <option value="Faisalabad">
+          <option value="Multan">
+          <option value="Peshawar">
+          <option value="Quetta">
+          <option value="Sialkot">
+          <option value="Gujranwala">
+          <option value="Hyderabad">
+          <option value="Abbottabad">
+          <option value="Bahawalpur">
+          <option value="Sargodha">
+          <option value="Sukkur">
+        </datalist>
+        <span class="field-error" id="err-city"></span>
+      </div>
+      <div class="field-group">
+        <label for="c-notes">Delivery Notes <span class="opt">(Optional)</span></label>
+        <input id="c-notes" name="notes" placeholder="e.g. Call before delivery / Near mosque">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label for="c-address">Complete Delivery Address <span class="req">*</span></label>
+      <textarea id="c-address" name="address" rows="3" required autocomplete="street-address" placeholder="House/Flat #, Street #, Sector/Area, Landmark" minlength="8"></textarea>
+      <span class="field-error" id="err-address"></span>
+    </div>
+
+    <div class="field-group">
+      <label><b>Payment Method</b> <span class="req">*</span></label>
+      <div id="pay-options" class="pay-options-box"></div>
+    </div>
+
+    <div class="upi" id="upi" hidden>
+      <div id="payment-guide"></div>
+    </div>
+
+    <div class="field-group">
+      <label for="code">Discount Code <span class="opt">(Optional)</span></label>
+      <div class="code-row">
+        <input id="code" placeholder="Enter coupon code" autocomplete="off">
+        <button class="btn btn-ghost" type="button" id="apply">Apply</button>
+      </div>
+      <p class="note" id="disc"></p>
+    </div>
+
+    <!-- ORDER SUMMARY REVIEW -->
+    <div class="checkout-summary-card" id="checkout-summary">
+      <h3>Order Breakdown</h3>
+      <div class="summary-line"><span>Subtotal:</span><span id="cs-subtotal">Rs. 0</span></div>
+      <div class="summary-line" id="cs-discount-row" style="display:none;color:#1e7e34"><span>Discount:</span><span id="cs-discount">−Rs. 0</span></div>
+      <div class="summary-line"><span>Delivery Fee:</span><span id="cs-shipping">Rs. 250</span></div>
+      <div class="summary-line total-line"><span>Total Payable:</span><span id="cs-total">Rs. 0</span></div>
+    </div>
+
+    <div id="checkout-error-banner" class="alert alert-error" style="display:none"></div>
+
+    <button class="btn btn-block btn-primary-submit" type="submit" id="place-order-btn">
+      <span id="submit-text">Place Order (Cash on Delivery)</span>
+      <span id="submit-spinner" class="spinner" style="display:none"></span>
+    </button>
+    <p class="note center" style="margin-top:.6rem">🔒 Safe checkout. We never ask for your bank cards or passwords.</p>
+  </form>
+
+  <!-- ORDER SUCCESS CONFIRMATION -->
+  <div id="order-success" class="order-success-card" hidden>
+    <div class="success-icon-wrap">✓</div>
+    <h2>Order Placed Successfully!</h2>
+    <p class="order-ref-badge">Order ID: <b id="succ-order-id">#LC-0000</b></p>
+    <p class="success-lead">Thank you for your order! Your watch will be carefully inspected and dispatched via TCS/Leopards Courier.</p>
+
+    <div class="success-details-grid">
+      <div class="detail-box">
+        <h4>Order Summary</h4>
+        <div id="succ-items-list"></div>
+        <hr class="dim-line">
+        <p class="flex-between"><span>Payment Method:</span> <b id="succ-payment-method">Cash on Delivery</b></p>
+        <p class="flex-between"><span>Total Amount:</span> <b id="succ-total-amount" class="text-large">Rs. 0</b></p>
+      </div>
+
+      <div class="detail-box">
+        <h4>Delivery Information</h4>
+        <p><b>Name:</b> <span id="succ-customer-name">-</span></p>
+        <p><b>Phone:</b> <span id="succ-customer-phone">-</span></p>
+        <p><b>City:</b> <span id="succ-customer-city">-</span></p>
+        <p><b>Address:</b> <span id="succ-customer-address">-</span></p>
+      </div>
+    </div>
+
+    <div class="post-order-actions">
+      <a id="succ-wa-btn" class="btn btn-wa btn-block" href="#" target="_blank" rel="noopener">
+        💬 Send Order Confirmation on WhatsApp
+      </a>
+      <a class="btn btn-ghost btn-block" href="shop.html">Continue Shopping</a>
+    </div>
+  </div>
+</section>
 </main>
 <div id="site-footer"></div>
 <script src="js/products.js"></script>

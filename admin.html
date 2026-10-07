@@ -3,256 +3,674 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow"> <!-- keeps Google from listing this page -->
-<title>Admin Panel</title>
+<meta name="robots" content="noindex, nofollow">
+<title>Admin Dashboard & Orders | LuxeCraft Watches</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  .admin-nav { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1.5rem; border-bottom: 1px solid var(--line); padding-bottom: .8rem; }
+  .admin-tab { min-height: 40px; padding: 0 1.2rem; border-radius: 999px; border: 1.5px solid var(--black); background: #fff; cursor: pointer; font-weight: 600; font-size: .88rem; }
+  .admin-tab.active { background: var(--black); color: #fff; }
+  .order-card { background: #fff; border: 1.5px solid var(--line); border-radius: 16px; padding: 1.2rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,.03); }
+  .order-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
+  .order-id-title { font-size: 1.15rem; font-weight: 700; }
+  .order-meta-grid { display: grid; grid-template-columns: 1fr; gap: .8rem; margin: .8rem 0; background: var(--grey); padding: 1rem; border-radius: 12px; }
+  @media(min-width: 640px) { .order-meta-grid { grid-template-columns: 1fr 1fr; } }
+  .order-items-table { width: 100%; border-collapse: collapse; margin-top: .6rem; font-size: .9rem; }
+  .order-items-table th, .order-items-table td { padding: .45rem .6rem; border-bottom: 1px solid var(--line); text-align: left; }
+  .order-items-table th { background: var(--grey); font-size: .8rem; text-transform: uppercase; color: var(--muted); }
+  .order-items-table td:last-child, .order-items-table th:last-child { text-align: right; }
+  .status-select-wrap { display: flex; align-items: center; gap: .6rem; margin-top: .8rem; }
+  .status-select-wrap select { min-height: 42px; border-radius: 999px; padding: 0 1rem; font-weight: 600; }
+  .filter-chip-group { display: flex; gap: .4rem; flex-wrap: wrap; margin: .8rem 0; }
+  .filter-chip { border: 1.5px solid var(--line); background: #fff; padding: .3rem .9rem; border-radius: 999px; font-size: .82rem; font-weight: 600; cursor: pointer; }
+  .filter-chip.active { background: var(--black); color: #fff; border-color: var(--black); }
+</style>
 </head>
 <body>
-<main class="wrap sec">
-  <h1>Admin panel</h1>
-  <p class="note" id="msg"></p>
+<main class="wrap sec" style="max-width:1100px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem">
+    <div>
+      <h1>Admin Dashboard</h1>
+      <p class="note">LuxeCraft Store & Order Management System</p>
+    </div>
+    <div id="auth-actions" hidden>
+      <button class="btn btn-ghost" id="logout" type="button" style="min-height:40px;padding:0 1.2rem">Log Out</button>
+    </div>
+  </div>
 
-  <!-- LOGIN (shown first) -->
-  <form class="form" id="login">
-    <label>Email<input id="email" type="email" required autocomplete="username"></label>
-    <label>Password<input id="pass" type="password" required autocomplete="current-password"></label>
-    <button class="btn" type="submit">Log in</button>
-  </form>
+  <p class="note" id="msg" style="margin-bottom:1rem;font-weight:600"></p>
 
-  <!-- PANEL (shown only after login) -->
+  <!-- LOGIN PANEL -->
+  <section id="login" class="form" style="max-width:440px;margin:2rem auto;background:#fff;border:1.5px solid var(--line);padding:2rem;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.05)">
+    <h2 style="margin-bottom:.4rem">Admin Sign In</h2>
+    <p class="note" style="margin-bottom:1.2rem">Sign in with your verified Supabase Admin credentials to manage orders, inventory, and settings.</p>
+    <div class="field-group">
+      <label for="email">Admin Email</label>
+      <input id="email" type="email" required autocomplete="username" placeholder="admin@luxecraft.pk">
+    </div>
+    <div class="field-group">
+      <label for="pass">Password</label>
+      <input id="pass" type="password" required autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <button class="btn btn-block" type="submit" id="login-btn" style="margin-top:1rem">Sign In to Dashboard</button>
+  </section>
+
+  <!-- AUTHENTICATED ADMIN PANEL -->
   <section id="panel" hidden>
-    <p><button class="link" id="logout">Log out</button></p>
+    <!-- TAB NAVIGATION -->
+    <nav class="admin-nav">
+      <button class="admin-tab active" data-tab="orders-tab">Orders & Fulfilment</button>
+      <button class="admin-tab" data-tab="products-tab">Watch Inventory</button>
+      <button class="admin-tab" data-tab="settings-tab">Store Settings</button>
+      <button class="admin-tab" data-tab="banner-tab">Banner Management</button>
+    </nav>
 
-    <form class="form" id="pform">
-      <h2 id="ftitle">Add a watch</h2>
-      <input type="hidden" name="id">
-      <label>Name<input name="name" required></label>
-      <label>Price<input name="price" type="number" min="0" required></label>
-      <label>Old price (optional, shows as crossed out)<input name="old_price" type="number" min="0"></label>
-      <label>Category<select name="category"><option>Casual</option><option>Formal</option></select></label>
-      <label>Upload watch photo (JPG or PNG, max 3 MB)<input id="photo" type="file" accept="image/*"></label>
-      <label>Or image path/link (filled automatically after upload)<input name="img"></label>
-      <label>Discount on this watch, in percent (0 for none)<input name="item_discount" type="number" min="0" max="90" value="0"></label>
-      <label>Badge<select name="badge"><option value="">None</option><option>New</option><option>Sale</option></select></label>
-      <label>Rating (1 to 5)<input name="rating" type="number" step="0.1" min="1" max="5" value="4.5"></label>
-      <label>Number of reviews<input name="reviews" type="number" min="0" value="0"></label>
-      <label>Description<textarea name="description" rows="3"></textarea></label>
-      <label style="display:flex;gap:.6rem;align-items:center"><input id="active" type="checkbox" checked style="width:auto;min-height:0"> Show on website</label>
-      <button class="btn" type="submit">Save watch</button>
-      <button class="btn btn-ghost" type="button" id="cancel">Clear form</button>
-    </form>
-
-    <form class="form" id="sform" style="margin-top:2rem">
-      <h2>Store settings</h2>
-      <label>Store name<input name="store_name"></label>
-      <label>WhatsApp number (country code first, example 923001234567)<input name="whatsapp" inputmode="numeric"></label>
-      <label>Logo (PNG with transparent background, light colours work best, max 3 MB)<input id="logo" type="file" accept="image/*"></label>
-      <label style="display:flex;gap:.6rem;align-items:center"><input id="cod" type="checkbox" checked style="width:auto;min-height:0"> Cash on delivery</label>
-      <label style="display:flex;gap:.6rem;align-items:center"><input id="online" type="checkbox" checked style="width:auto;min-height:0"> Online payment (JazzCash on your WhatsApp number)</label>
-      <label>Payment details shown to customers (optional). Leave empty to use JazzCash on your WhatsApp number. You can add your account name here.<textarea name="online_info" rows="3"></textarea></label>
-      <label>Delivery charge in Rs (0 for free delivery on everything)<input name="shipping_fee" type="number" min="0"></label>
-      <label>Free delivery on orders above Rs (0 for no free-delivery limit)<input name="free_shipping_min" type="number" min="0"></label>
-      <label>Discount code (example SAVE10). Leave empty for no discount.<input name="discount_code"></label>
-      <label>Discount percent<input name="discount_percent" type="number" min="0" max="90"></label>
-      <button class="btn" type="submit">Save settings</button>
-      <button class="btn btn-ghost" type="button" id="rlogo">Remove logo</button>
-    </form>
-
-    <form class="form" id="bform" style="margin-top:2rem">
-      <h2>Home page banner</h2>
-      <label>Upload banner photo (wide photo, JPG or PNG, max 3 MB)<input id="banner" type="file" accept="image/*" required></label>
-      <button class="btn" type="submit">Save banner</button>
-      <button class="btn btn-ghost" type="button" id="bdefault">Use the default banner</button>
-    </form>
-
-
-    <section class="form" id="orders-section" style="margin-top:2rem">
-      <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap">
-        <h2 style="margin:0">Orders</h2>
-        <button class="btn btn-ghost" type="button" id="refresh-orders">Refresh orders</button>
+    <!-- 1) ORDERS TAB -->
+    <section id="orders-tab" class="admin-view">
+      <!-- DASHBOARD KPIS -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-val" id="kpi-total-orders">0</div>
+          <div class="kpi-lbl">Total Orders</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-val" id="kpi-total-revenue" style="color:var(--success)">Rs. 0</div>
+          <div class="kpi-lbl">Total Sales (PKR)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-val" id="kpi-pending-orders" style="color:var(--warning)">0</div>
+          <div class="kpi-lbl">Pending Orders</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-val" id="kpi-delivered-orders" style="color:var(--success)">0</div>
+          <div class="kpi-lbl">Delivered Orders</div>
+        </div>
       </div>
-      <p class="note" id="orders-msg"></p>
+
+      <!-- TOOLBAR: SEARCH & STATUS FILTER -->
+      <div class="admin-toolbar">
+        <input id="order-search" placeholder="Search by customer name, phone, city, or order #..." autocomplete="off">
+        <button class="btn btn-ghost" id="refresh-orders" type="button" style="min-height:42px;padding:0 1rem">↻ Refresh</button>
+      </div>
+
+      <div class="filter-chip-group" id="order-filters">
+        <button class="filter-chip active" data-status="all">All Orders (<span id="cnt-all">0</span>)</button>
+        <button class="filter-chip" data-status="pending">Pending (<span id="cnt-pending">0</span>)</button>
+        <button class="filter-chip" data-status="confirmed">Confirmed (<span id="cnt-confirmed">0</span>)</button>
+        <button class="filter-chip" data-status="processing">Processing (<span id="cnt-processing">0</span>)</button>
+        <button class="filter-chip" data-status="shipped">Shipped (<span id="cnt-shipped">0</span>)</button>
+        <button class="filter-chip" data-status="delivered">Delivered (<span id="cnt-delivered">0</span>)</button>
+        <button class="filter-chip" data-status="cancelled">Cancelled (<span id="cnt-cancelled">0</span>)</button>
+      </div>
+
+      <p class="note" id="orders-msg" style="margin:.8rem 0"></p>
       <div id="orders-list"></div>
     </section>
 
-    <h2 style="margin-top:2rem">Your watches</h2>
-    <div id="list"></div>
+    <!-- 2) INVENTORY / PRODUCTS TAB -->
+    <section id="products-tab" class="admin-view" hidden>
+      <form class="form" id="pform" style="background:#fff;border:1.5px solid var(--line);padding:1.5rem;border-radius:16px">
+        <h2 id="ftitle">Add New Watch</h2>
+        <input type="hidden" name="id">
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label>Watch Name <span class="req">*</span></label>
+            <input name="name" required placeholder="e.g. Royal Chronograph">
+          </div>
+          <div class="field-group">
+            <label>Category <span class="req">*</span></label>
+            <select name="category"><option>Casual</option><option>Formal</option></select>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label>Price in PKR (Rs.) <span class="req">*</span></label>
+            <input name="price" type="number" min="0" required placeholder="e.g. 3499">
+          </div>
+          <div class="field-group">
+            <label>Original / Crossed Price (Rs.)</label>
+            <input name="old_price" type="number" min="0" placeholder="e.g. 4500 (0 if none)">
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label>Upload Watch Photo (JPG, PNG, WebP max 3MB)</label>
+            <input id="photo" type="file" accept="image/*">
+          </div>
+          <div class="field-group">
+            <label>Image URL / Storage Path</label>
+            <input name="img" placeholder="images/watch-1.svg or Supabase Public URL">
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label>Badge</label>
+            <select name="badge"><option value="">None</option><option value="New">New</option><option value="Sale">Sale</option></select>
+          </div>
+          <div class="field-group">
+            <label>Item Discount % (0 for none)</label>
+            <input name="item_discount" type="number" min="0" max="90" value="0">
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label>Rating (1.0 to 5.0)</label>
+            <input name="rating" type="number" step="0.1" min="1" max="5" value="4.5">
+          </div>
+          <div class="field-group">
+            <label>Review Count</label>
+            <input name="reviews" type="number" min="0" value="15">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Description</label>
+          <textarea name="description" rows="3" placeholder="Case size, dial color, strap material, water resistance..."></textarea>
+        </div>
+
+        <div style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
+          <label style="display:flex;gap:.5rem;align-items:center;cursor:pointer">
+            <input id="active" type="checkbox" checked style="width:18px;min-height:18px">
+            <b>Active & Visible in Store</b>
+          </label>
+        </div>
+
+        <div style="display:flex;gap:.8rem;margin-top:.8rem;flex-wrap:wrap">
+          <button class="btn" type="submit">Save Watch</button>
+          <button class="btn btn-ghost" type="button" id="cancel">Clear Form</button>
+        </div>
+      </form>
+
+      <h2 style="margin-top:2.5rem">Existing Watches In Catalogue</h2>
+      <div id="list" style="margin-top:1rem"></div>
+    </section>
+
+    <!-- 3) STORE SETTINGS TAB -->
+    <section id="settings-tab" class="admin-view" hidden>
+      <form class="form" id="sform" style="background:#fff;border:1.5px solid var(--line);padding:1.5rem;border-radius:16px">
+        <h2>Store Configuration</h2>
+        <p class="note">These settings govern the entire website across all pages.</p>
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label>Store Name</label>
+            <input name="store_name" placeholder="LuxeCraft Watches">
+          </div>
+          <div class="field-group">
+            <label>WhatsApp Number (Pakistan: 923XXXXXXXXX)</label>
+            <input name="whatsapp" inputmode="numeric" placeholder="923273651015">
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label>Delivery Fee across Pakistan (Rs.)</label>
+            <input name="shipping_fee" type="number" min="0" placeholder="250">
+          </div>
+          <div class="field-group">
+            <label>Free Delivery Threshold (Rs.)</label>
+            <input name="free_shipping_min" type="number" min="0" placeholder="5000">
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label>Promo Discount Code</label>
+            <input name="discount_code" placeholder="e.g. LUXE15">
+          </div>
+          <div class="field-group">
+            <label>Discount Percentage (%)</label>
+            <input name="discount_percent" type="number" min="0" max="90" placeholder="15">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Upload Brand Logo (PNG Transparent max 3MB)</label>
+          <input id="logo" type="file" accept="image/*">
+        </div>
+
+        <div class="field-group">
+          <label style="display:flex;gap:.6rem;align-items:center">
+            <input id="cod" type="checkbox" checked style="width:18px;min-height:18px">
+            <b>Enable Cash on Delivery (COD)</b>
+          </label>
+          <label style="display:flex;gap:.6rem;align-items:center">
+            <input id="online" type="checkbox" checked style="width:18px;min-height:18px">
+            <b>Enable Digital Payments (JazzCash, Easypaisa, Bank Transfer)</b>
+          </label>
+        </div>
+
+        <div class="field-group">
+          <label>Digital Payment Instructions for Customers</label>
+          <textarea name="online_info" rows="3" placeholder="Account titles, account numbers, and WhatsApp confirmation instructions."></textarea>
+        </div>
+
+        <div style="display:flex;gap:.8rem;flex-wrap:wrap">
+          <button class="btn" type="submit">Save Store Settings</button>
+          <button class="btn btn-ghost" type="button" id="rlogo">Remove Custom Logo</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 4) HERO BANNER TAB -->
+    <section id="banner-tab" class="admin-view" hidden>
+      <form class="form" id="bform" style="background:#fff;border:1.5px solid var(--line);padding:1.5rem;border-radius:16px">
+        <h2>Home Page Hero Banner</h2>
+        <p class="note">Upload a high-resolution wide photo (JPG/PNG max 3MB). Recommended dimensions: 1920x650 px.</p>
+        <div class="field-group">
+          <label>Select Banner Image</label>
+          <input id="banner" type="file" accept="image/*" required>
+        </div>
+        <div style="display:flex;gap:.8rem;flex-wrap:wrap">
+          <button class="btn" type="submit">Upload & Save Banner</button>
+          <button class="btn btn-ghost" type="button" id="bdefault">Restore Default Banner</button>
+        </div>
+      </form>
+    </section>
   </section>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-/* ===== 1) PASTE YOUR TWO SUPABASE VALUES HERE (Project Settings > API) ===== */
 const SUPABASE_URL = "https://xwxoeibjefzyxhheabdy.supabase.co";
-const SUPABASE_KEY = "sb_publishable_8yqxSB2Ag5-6YoPV2iEc4g_eAwy8a-M";   // public key; never paste a secret/service_role key
-
+const SUPABASE_KEY = "sb_publishable_8yqxSB2Ag5-6YoPV2iEc4g_eAwy8a-M";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
 const say = t => { $("#msg").textContent = t || ""; };
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-let rows = [];
+const money = n => "Rs. " + Number(n || 0).toLocaleString("en-PK");
 
-/* ===== 2) LOGIN / LOGOUT ===== */
-async function show() {                       // show login box or panel
+let productsList = [];
+let ordersList = [];
+let currentFilter = "all";
+let currentSearch = "";
+
+/* TAB SWITCHING */
+$$(".admin-tab").forEach(tab => {
+  tab.onclick = () => {
+    $$(".admin-tab").forEach(t => t.classList.remove("active"));
+    $$(".admin-view").forEach(v => v.hidden = true);
+    tab.classList.add("active");
+    const target = $(`#${tab.dataset.tab}`);
+    if (target) target.hidden = false;
+  };
+});
+
+/* AUTH / SESSION */
+async function checkAuth() {
   const { data: { session } } = await db.auth.getSession();
   $("#login").hidden = !!session;
   $("#panel").hidden = !session;
-  if (session) { load(); loadSettingsForm(); loadOrders(); }
-}
-$("#login").onsubmit = async e => {
-  e.preventDefault(); say("Logging in...");
-  const { error } = await db.auth.signInWithPassword({ email: $("#email").value, password: $("#pass").value });
-  say(error ? error.message : ""); show();
-};
-$("#logout").onclick = async () => { await db.auth.signOut(); show(); };
+  $("#auth-actions").hidden = !session;
 
-/* ===== 3) ORDERS ===== */
-function orderItemsHtml(items) {
-  let arr = Array.isArray(items) ? items : [];
-  return arr.length ? arr.map(i => `<div>${esc(i.name || "Item")} × ${esc(i.qty || i.quantity || 1)} — Rs ${Number(i.price || 0).toLocaleString("en-PK")}</div>`).join("") : "<div>No item details</div>";
+  if (session) {
+    say(`Logged in as: ${session.user.email}`);
+    loadOrders();
+    loadProducts();
+    loadSettingsForm();
+  }
+}
+
+$("#login").onsubmit = async e => {
+  e.preventDefault();
+  say("Signing in...");
+  const email = $("#email").value.trim();
+  const password = $("#pass").value;
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+  if (error) {
+    say("Login error: " + error.message);
+  } else {
+    say("Welcome back!");
+    checkAuth();
+  }
+};
+
+$("#logout").onclick = async () => {
+  await db.auth.signOut();
+  say("Logged out.");
+  checkAuth();
+};
+
+/* ORDERS LOGIC */
+function renderOrders() {
+  const listEl = $("#orders-list");
+  const msgEl = $("#orders-msg");
+
+  let filtered = ordersList;
+  if (currentFilter !== "all") {
+    filtered = filtered.filter(o => (o.status || "pending").toLowerCase() === currentFilter.toLowerCase());
+  }
+  if (currentSearch) {
+    const q = currentSearch.toLowerCase();
+    filtered = filtered.filter(o =>
+      String(o.id).toLowerCase().includes(q) ||
+      String(o.customer_name || "").toLowerCase().includes(q) ||
+      String(o.customer_phone || "").toLowerCase().includes(q) ||
+      String(o.city || "").toLowerCase().includes(q)
+    );
+  }
+
+  // Update KPI counters
+  const totalRev = ordersList.filter(o => (o.status || "") !== "cancelled").reduce((s, o) => s + Number(o.total || 0), 0);
+  $("#kpi-total-orders").textContent = ordersList.length;
+  $("#kpi-total-revenue").textContent = money(totalRev);
+  $("#kpi-pending-orders").textContent = ordersList.filter(o => (o.status || "pending") === "pending").length;
+  $("#kpi-delivered-orders").textContent = ordersList.filter(o => o.status === "delivered").length;
+
+  // Filter chips count
+  $("#cnt-all").textContent = ordersList.length;
+  ["pending","confirmed","processing","shipped","delivered","cancelled"].forEach(st => {
+    const el = $(`#cnt-${st}`);
+    if (el) el.textContent = ordersList.filter(o => (o.status || "pending") === st).length;
+  });
+
+  msgEl.textContent = filtered.length ? `Showing ${filtered.length} order(s)` : "No orders found matching criteria.";
+
+  listEl.innerHTML = filtered.map(o => {
+    const items = Array.isArray(o.items) ? o.items : [];
+    const status = (o.status || "pending").toLowerCase();
+    const dateFormatted = o.created_at ? new Date(o.created_at).toLocaleString("en-PK", { dateStyle: "medium", timeStyle: "short" }) : "-";
+
+    return `
+      <article class="order-card">
+        <div class="order-header">
+          <div>
+            <div class="order-id-title">Order #${esc(o.id)}</div>
+            <div style="font-size:.85rem;color:var(--muted)">Placed on: ${dateFormatted}</div>
+          </div>
+          <div style="text-align:right">
+            <span class="status-pill status-${status}">${status}</span>
+            <div style="font-size:1.2rem;font-weight:700;margin-top:.2rem">${money(o.total)}</div>
+          </div>
+        </div>
+
+        <div class="order-meta-grid">
+          <div>
+            <h4>Customer Details</h4>
+            <p><b>Name:</b> ${esc(o.customer_name)}</p>
+            <p><b>Phone:</b> <a href="tel:${esc(o.customer_phone)}" style="color:#0a0a0a;text-decoration:underline">${esc(o.customer_phone)}</a> 
+               <a href="https://wa.me/${esc(String(o.customer_phone).replace(/\\D/g,''))}" target="_blank" rel="noopener" style="color:var(--wa-dark);font-weight:700;margin-left:.4rem">WhatsApp ↗</a></p>
+            ${o.customer_email ? `<p><b>Email:</b> ${esc(o.customer_email)}</p>` : ""}
+            <p><b>City:</b> ${esc(o.city || "Not specified")}</p>
+            <p><b>Address:</b> ${esc(o.customer_address)}</p>
+          </div>
+          <div>
+            <h4>Payment & Logistics</h4>
+            <p><b>Payment:</b> ${esc(o.payment_method || "Cash on Delivery")}</p>
+            <p><b>Subtotal:</b> ${money(o.subtotal)}</p>
+            <p><b>Delivery Fee:</b> ${o.shipping_fee ? money(o.shipping_fee) : "FREE"}</p>
+            ${o.discount ? `<p><b>Discount Applied:</b> −${money(o.discount)}</p>` : ""}
+            ${o.notes ? `<p><b>Customer Notes:</b> <i>${esc(o.notes)}</i></p>` : ""}
+          </div>
+        </div>
+
+        <h4 style="margin-top:.8rem">Ordered Watches (${items.length})</h4>
+        <table class="order-items-table">
+          <thead>
+            <tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            ${items.map(i => `
+              <tr>
+                <td><b>${esc(i.name || "Watch")}</b> ${i.sku ? `<small>(${esc(i.sku)})</small>` : ""}</td>
+                <td>${esc(i.quantity || i.qty || 1)}</td>
+                <td>${money(i.price)}</td>
+                <td>${money((i.price || 0) * (i.quantity || i.qty || 1))}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+
+        <div class="status-select-wrap">
+          <label style="font-weight:600;font-size:.9rem">Update Status:</label>
+          <select class="order-status-select" data-order-id="${esc(o.id)}">
+            ${["pending","confirmed","processing","shipped","delivered","cancelled"].map(st => `
+              <option value="${st}" ${status === st ? "selected" : ""}>${st[0].toUpperCase() + st.slice(1)}</option>
+            `).join("")}
+          </select>
+          <span class="status-upd-msg" id="upd-msg-${esc(o.id)}" style="font-size:.85rem;color:var(--success);font-weight:600"></span>
+        </div>
+      </article>`;
+  }).join("");
 }
 
 async function loadOrders() {
-  const msg = $("#orders-msg"), list = $("#orders-list");
-  msg.textContent = "Loading orders...";
+  const msg = $("#orders-msg");
+  msg.textContent = "Loading orders from Supabase...";
   const { data, error } = await db.from("orders").select("*").order("created_at", { ascending: false });
-  if (error) { msg.textContent = "Could not load orders: " + error.message; list.innerHTML = ""; return; }
-  msg.textContent = data.length ? `${data.length} order(s)` : "No orders yet.";
-  list.innerHTML = data.length ? data.map(o => `
-    <article class="row" style="display:block;margin-bottom:1rem">
-      <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-        <div><b>Order #${esc(o.id)}</b><br>${esc(o.customer_name)} · ${esc(o.customer_phone)}${o.city ? " · " + esc(o.city) : ""}</div>
-        <div><b>Rs ${Number(o.total || 0).toLocaleString("en-PK")}</b><br>${new Date(o.created_at).toLocaleString()}</div>
-      </div>
-      <p><b>Address:</b> ${esc(o.customer_address)}</p>
-      <p><b>Payment:</b> ${esc(o.payment_method || "COD")}</p>
-      <p><b>Items:</b><br>${orderItemsHtml(o.items)}</p>
-      <label>Status
-        <select class="order-status" data-id="${esc(o.id)}">
-          ${["pending","confirmed","shipped","delivered","cancelled"].map(st => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st[0].toUpperCase()+st.slice(1)}</option>`).join("")}
-        </select>
-      </label>
-      ${o.notes ? `<p><b>Notes:</b> ${esc(o.notes)}</p>` : ""}
-    </article>`).join("") : "<p>No orders yet.</p>";
+
+  if (error) {
+    msg.textContent = "Could not load orders: " + error.message;
+    // Check fallback local ledger
+    try {
+      const local = JSON.parse(localStorage.getItem("luxecraft_orders") || "[]");
+      if (local.length) {
+        ordersList = local;
+        msg.textContent = `Displaying ${local.length} local ledger order(s). Note: Run Supabase SQL migration to sync cloud RLS.`;
+        renderOrders();
+      }
+    } catch(e) {}
+    return;
+  }
+
+  ordersList = data || [];
+  renderOrders();
 }
 
 $("#refresh-orders").onclick = loadOrders;
-$("#orders-list").onchange = async e => {
-  const select = e.target.closest(".order-status");
-  if (!select) return;
-  const { error } = await db.from("orders").update({ status: select.value }).eq("id", select.dataset.id);
-  $("#orders-msg").textContent = error ? "Status update failed: " + error.message : "Order status updated ✓";
+
+$("#order-search").oninput = e => {
+  currentSearch = e.target.value.trim();
+  renderOrders();
 };
 
-/* ===== 3) SHOW ALL PRODUCTS ===== */
-async function load() {
+$("#order-filters").onclick = e => {
+  const chip = e.target.closest(".filter-chip");
+  if (!chip) return;
+  $$(".filter-chip").forEach(c => c.classList.remove("active"));
+  chip.classList.add("active");
+  currentFilter = chip.dataset.status;
+  renderOrders();
+};
+
+$("#orders-list").onchange = async e => {
+  const select = e.target.closest(".order-status-select");
+  if (!select) return;
+  const orderId = select.dataset.orderId;
+  const newStatus = select.value;
+  const statMsg = $(`#upd-msg-${orderId}`);
+
+  statMsg.textContent = "Saving...";
+  const { error } = await db.from("orders").update({ status: newStatus }).eq("id", orderId);
+
+  if (error) {
+    statMsg.textContent = "Update failed: " + error.message;
+    statMsg.style.color = "var(--danger)";
+  } else {
+    statMsg.textContent = "Status updated ✓";
+    statMsg.style.color = "var(--success)";
+    const target = ordersList.find(o => String(o.id) === String(orderId));
+    if (target) target.status = newStatus;
+    setTimeout(() => { statMsg.textContent = ""; renderOrders(); }, 1200);
+  }
+};
+
+/* PRODUCTS CRUD */
+async function loadProducts() {
   const { data, error } = await db.from("products").select("*").order("id");
   if (error) { say(error.message); return; }
-  rows = data;
-  $("#list").innerHTML = rows.length ? rows.map(p => `
-    <div class="row">
-      <img src="${esc(p.img)}" alt="${esc(p.name)}">
-      <div><b>${esc(p.name)}</b><br>${esc(p.category)} - ${esc(p.price)}${p.discount_percent ? " (" + p.discount_percent + "% off)" : ""}${p.active ? "" : " (hidden)"}</div>
-      <div><button class="link" data-a="edit" data-id="${p.id}">Edit</button><br><button class="link" data-a="del" data-id="${p.id}">Delete</button></div>
-    </div>`).join("") : "<p>No watches yet. Add your first one above.</p>";
+  productsList = data || [];
+
+  $("#list").innerHTML = productsList.length ? productsList.map(p => `
+    <div class="row" style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:.8rem;margin-bottom:.6rem">
+      <img src="${esc(p.img)}" alt="${esc(p.name)}" width="70" height="70" style="object-fit:cover;border-radius:8px">
+      <div>
+        <b>${esc(p.name)}</b> <small style="color:var(--muted)">(${esc(p.category)})</small><br>
+        <span>${money(p.price)}</span> ${p.old_price ? `<s>${money(p.old_price)}</s>` : ""}
+        ${p.discount_percent ? `<span class="badge" style="position:static;display:inline-block">${p.discount_percent}% off</span>` : ""}
+        <br>
+        <small style="color:${p.active ? 'var(--success)' : 'var(--danger)'};font-weight:600">${p.active ? '● Active' : '✕ Hidden'}</small>
+      </div>
+      <div>
+        <button class="btn btn-ghost" data-a="edit" data-id="${p.id}" type="button" style="min-height:36px;padding:0 .8rem;font-size:.85rem">Edit</button>
+        <button class="btn btn-danger" data-a="del" data-id="${p.id}" type="button" style="min-height:36px;padding:0 .8rem;font-size:.85rem;margin-top:.3rem">Delete</button>
+      </div>
+    </div>
+  `).join("") : "<p class='note'>No watches in database. Add your first watch above.</p>";
 }
 
-/* ===== 4) EDIT / DELETE BUTTONS ===== */
+function resetProductForm() {
+  $("#pform").reset();
+  $("#pform").id.value = "";
+  $("#active").checked = true;
+  $("#ftitle").textContent = "Add New Watch";
+}
+$("#cancel").onclick = resetProductForm;
+
 $("#list").onclick = async e => {
-  const b = e.target.closest("button[data-a]"); if (!b) return;
-  const p = rows.find(x => x.id == b.dataset.id);
-  if (b.dataset.a === "edit") {               // fill the form with this watch
+  const b = e.target.closest("button[data-a]");
+  if (!b) return;
+  const p = productsList.find(x => String(x.id) === String(b.dataset.id));
+  if (!p) return;
+
+  if (b.dataset.a === "edit") {
     const f = $("#pform");
-    f.id.value = p.id; f.name.value = p.name; f.price.value = p.price; f.old_price.value = p.old_price || "";
-    f.category.value = p.category; f.img.value = p.img || ""; f.badge.value = p.badge || "";
-    f.item_discount.value = p.discount_percent || 0; f.rating.value = p.rating; f.reviews.value = p.reviews; f.description.value = p.description || "";
-    $("#active").checked = p.active; $("#ftitle").textContent = "Edit: " + p.name;
+    f.id.value = p.id;
+    f.name.value = p.name;
+    f.price.value = p.price;
+    f.old_price.value = p.old_price || "";
+    f.category.value = p.category;
+    f.img.value = p.img || "";
+    f.badge.value = p.badge || "";
+    f.item_discount.value = p.discount_percent || 0;
+    f.rating.value = p.rating || 4.5;
+    f.reviews.value = p.reviews || 0;
+    f.description.value = p.description || "";
+    $("#active").checked = p.active !== false;
+    $("#ftitle").textContent = "Edit: " + p.name;
     f.scrollIntoView({ behavior: "smooth" });
   }
-  if (b.dataset.a === "del" && confirm("Delete " + p.name + "?")) {
+
+  if (b.dataset.a === "del" && confirm(`Are you sure you want to delete "${p.name}"?`)) {
     const { error } = await db.from("products").delete().eq("id", p.id);
-    say(error ? error.message : "Deleted ✓"); load();
+    say(error ? error.message : "Deleted ✓");
+    loadProducts();
   }
 };
 
-/* ===== 5) SAVE (add new or update existing) ===== */
-function resetForm() { $("#pform").reset(); $("#pform").id.value = ""; $("#active").checked = true; $("#ftitle").textContent = "Add a watch"; }
-$("#cancel").onclick = resetForm;
 $("#pform").onsubmit = async e => {
   e.preventDefault();
   const f = new FormData(e.target), id = f.get("id");
-  const rec = { name: f.get("name"), price: +f.get("price"), old_price: +f.get("old_price") || 0, category: f.get("category"),
-    img: f.get("img"), badge: f.get("badge"), rating: +f.get("rating") || 4.5, reviews: +f.get("reviews") || 0,
-    description: f.get("description"), discount_percent: +f.get("item_discount") || 0, active: $("#active").checked };
-  const file = $("#photo").files[0];          // photo chosen? upload it to Supabase Storage first
+  const rec = {
+    name: f.get("name"),
+    price: +f.get("price"),
+    old_price: +f.get("old_price") || 0,
+    category: f.get("category"),
+    img: f.get("img"),
+    badge: f.get("badge"),
+    rating: +f.get("rating") || 4.5,
+    reviews: +f.get("reviews") || 0,
+    description: f.get("description"),
+    discount_percent: +f.get("item_discount") || 0,
+    active: $("#active").checked
+  };
+
+  const file = $("#photo").files[0];
   if (file) {
-    if (file.size > 3 * 1024 * 1024) { say("Photo is too big. Please use a photo under 3 MB."); return; }
-    say("Uploading photo...");
+    if (file.size > 3 * 1024 * 1024) { say("Photo exceeds 3MB limit."); return; }
+    say("Uploading watch photo to Supabase storage...");
     const path = Date.now() + "-" + file.name.replace(/[^a-z0-9.]/gi, "_");
     const up = await db.storage.from("watch-images").upload(path, file);
-    if (up.error) { say("Photo upload failed: " + up.error.message); return; }
+    if (up.error) { say("Storage upload failed: " + up.error.message); return; }
     rec.img = db.storage.from("watch-images").getPublicUrl(path).data.publicUrl;
   }
-  const { error } = id ? await db.from("products").update(rec).eq("id", id) : await db.from("products").insert(rec);
-  say(error ? error.message : "Saved ✓");
-  if (!error) { resetForm(); load(); }
+
+  const { error } = id
+    ? await db.from("products").update(rec).eq("id", id)
+    : await db.from("products").insert(rec);
+
+  say(error ? error.message : "Watch saved successfully ✓");
+  if (!error) { resetProductForm(); loadProducts(); }
 };
 
-/* ===== 6) STORE SETTINGS (name, WhatsApp, logo, payment, discount) ===== */
+/* STORE SETTINGS */
 async function loadSettingsForm() {
   const { data } = await db.from("site_settings").select("key,value");
   const s = {}; (data || []).forEach(r => { s[r.key] = r.value; });
   const f = $("#sform");
-  ["store_name", "whatsapp", "online_info", "discount_code", "discount_percent", "shipping_fee", "free_shipping_min"].forEach(k => { f[k].value = s[k] || ""; });
+  ["store_name", "whatsapp", "online_info", "discount_code", "discount_percent", "shipping_fee", "free_shipping_min"].forEach(k => {
+    if (f[k]) f[k].value = s[k] || "";
+  });
   $("#cod").checked = s.cod !== "no";
   $("#online").checked = s.online !== "no";
 }
+
 $("#sform").onsubmit = async e => {
-  e.preventDefault(); const f = e.target;
+  e.preventDefault();
+  const f = e.target;
   const rows = [
-    { key: "store_name", value: f.store_name.value.trim() }, { key: "whatsapp", value: f.whatsapp.value.replace(/\D/g, "") },
-    { key: "cod", value: $("#cod").checked ? "yes" : "no" }, { key: "online", value: $("#online").checked ? "yes" : "no" }, { key: "online_info", value: f.online_info.value.trim() },
-    { key: "shipping_fee", value: String(+f.shipping_fee.value || 0) }, { key: "free_shipping_min", value: String(+f.free_shipping_min.value || 0) },
-    { key: "discount_code", value: f.discount_code.value.trim() }, { key: "discount_percent", value: String(+f.discount_percent.value || 0) }];
+    { key: "store_name", value: f.store_name.value.trim() },
+    { key: "whatsapp", value: f.whatsapp.value.replace(/\D/g, "") },
+    { key: "cod", value: $("#cod").checked ? "yes" : "no" },
+    { key: "online", value: $("#online").checked ? "yes" : "no" },
+    { key: "online_info", value: f.online_info.value.trim() },
+    { key: "shipping_fee", value: String(+f.shipping_fee.value || 0) },
+    { key: "free_shipping_min", value: String(+f.free_shipping_min.value || 0) },
+    { key: "discount_code", value: f.discount_code.value.trim() },
+    { key: "discount_percent", value: String(+f.discount_percent.value || 0) }
+  ];
+
   const file = $("#logo").files[0];
   if (file) {
-    if (file.size > 3 * 1024 * 1024) { say("Logo is too big. Please use a file under 3 MB."); return; }
+    if (file.size > 3 * 1024 * 1024) { say("Logo is too big. Max 3MB."); return; }
     say("Uploading logo...");
     const path = "logo-" + Date.now() + "-" + file.name.replace(/[^a-z0-9.]/gi, "_");
     const up = await db.storage.from("watch-images").upload(path, file);
     if (up.error) { say("Logo upload failed: " + up.error.message); return; }
     rows.push({ key: "logo_url", value: db.storage.from("watch-images").getPublicUrl(path).data.publicUrl });
   }
+
   const { error } = await db.from("site_settings").upsert(rows);
-  say(error ? error.message : "Settings saved ✓ (open the website and press Ctrl + F5)");
+  say(error ? error.message : "Settings saved successfully ✓");
   if (!error) $("#logo").value = "";
 };
+
 $("#rlogo").onclick = async () => {
   const { error } = await db.from("site_settings").delete().eq("key", "logo_url");
-  say(error ? error.message : "Logo removed ✓");
+  say(error ? error.message : "Custom logo removed ✓");
 };
 
-/* ===== 7) HOME PAGE BANNER ===== */
+/* BANNER */
 $("#bform").onsubmit = async e => {
   e.preventDefault();
   const file = $("#banner").files[0];
   if (!file) return;
-  if (file.size > 3 * 1024 * 1024) { say("Banner is too big. Please use a photo under 3 MB."); return; }
-  say("Uploading banner...");
+  if (file.size > 3 * 1024 * 1024) { say("Banner is too big. Max 3MB."); return; }
+
+  say("Uploading hero banner...");
   const path = "banner-" + Date.now() + "-" + file.name.replace(/[^a-z0-9.]/gi, "_");
   const up = await db.storage.from("watch-images").upload(path, file);
   if (up.error) { say("Banner upload failed: " + up.error.message); return; }
   const url = db.storage.from("watch-images").getPublicUrl(path).data.publicUrl;
+
   const { error } = await db.from("site_settings").upsert({ key: "hero_image", value: url });
-  say(error ? error.message : "Banner saved ✓ (open the home page and press Ctrl + F5)");
+  say(error ? error.message : "Banner updated successfully ✓");
   if (!error) $("#bform").reset();
 };
+
 $("#bdefault").onclick = async () => {
   const { error } = await db.from("site_settings").delete().eq("key", "hero_image");
   say(error ? error.message : "Default banner restored ✓");
 };
 
-show();   // start
+checkAuth();
 </script>
 </body>
 </html>
